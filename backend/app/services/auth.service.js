@@ -1,32 +1,9 @@
-const { createClient } = require("@supabase/supabase-js");
+const supabase = require("../utils/supabaseClient");
 const jwt = require("jsonwebtoken");
-const Role = require("../enums/role.enum");
-const User = require("../models/user.model");
+const userService = require("./user.service");
+const { convertToSupabaseUser, convertToUser } = require("../utils/user.util");
 
 require("dotenv").config();
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseSRK = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-const supabase = createClient(supabaseUrl, supabaseSRK);
-
-// Create a user metadata with UserScheme to store in Supabase
-const extractUserMetadata = (data) => {
-  return {
-    email: data.email || "",
-    phone: data.phone || "",
-    first_name: data.firstName || "",
-    last_name: data.lastName || "",
-    date_of_birth: data.dateOfBirth || null,
-    address: data.address || "",
-    email_verified: data.emailVerified || false,
-    phone_verified: data.phoneVerified || false,
-    is_active: data.isActive || true,
-    avatar_url: data.avatarUrl || "",
-    role: data.role || Role.READER,
-    created_at: data.createdAt || new Date(),
-  };
-};
 
 // Sign up service to create a new user
 const signUp = async (email, password, firstName, lastName) => {
@@ -34,7 +11,7 @@ const signUp = async (email, password, firstName, lastName) => {
     email,
     password,
     options: {
-      data: extractUserMetadata({
+      data: convertToSupabaseUser({
         email,
         firstName,
         lastName,
@@ -43,19 +20,9 @@ const signUp = async (email, password, firstName, lastName) => {
   });
 
   if (error) throw new Error(error.message);
-  const userMetadata = data.user.user_metadata;
 
   // Create a new User in mongoDB from the Supabase user_metadata
-  const newUser = new User({
-    _id: data.user.id, // Use the Supabase user ID as the MongoDB _id
-    email: userMetadata.email,
-    firstName: userMetadata.first_name,
-    lastName: userMetadata.last_name,
-    emailVerified: userMetadata.email_verified,
-    phoneVerified: userMetadata.phone_verified,
-    role: userMetadata.role,
-    createdAt: userMetadata.created_at,
-  });
+  const newUser = userService.createUser(convertToUser(data.user));
 
   // Save the new user to MongoDB
   try {
@@ -82,6 +49,12 @@ const verifyEmailCallback = async (token) => {
 
 // Sign in service to authenticate a user
 const signIn = async (email, password) => {
+  // Check if the user exists and is active
+  const user = await User.findOne({ email });
+  if (!user || !user.isActive) {
+    throw new Error("Account is not active or does not exist");
+  }
+
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,

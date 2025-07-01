@@ -1,6 +1,7 @@
 const app = require("./app");
 const MongoDB = require("./app/utils/mongodb.util");
 const config = require("./app/config");
+const staffService = require("./app/services/staff.service");
 
 async function startServer() {
   try {
@@ -13,6 +14,10 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
+
+    // Seed the staff data
+    await staffService.seedStaff();
+    console.log("Staff data seeded successfully.");
   } catch (error) {
     console.log("Cannot connect to the database!", error);
     process.exit();
