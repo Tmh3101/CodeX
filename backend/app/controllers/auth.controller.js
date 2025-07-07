@@ -1,20 +1,33 @@
+/**
+ * Auth Controller
+ * This controller handles user authentication requests
+ */
+
 const ApiError = require("../api-error");
 const authService = require("../services/auth.service");
 
-// Controller function to handle user sign up
-exports.signUp = async (req, res, next) => {
+/**
+ * Controller function to handle user sign up requests
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next middleware function
+ * @returns {Promise<void>}
+ */
+const signUp = async (req, res, next) => {
+  // Check if request body is empty
   if (!req.body) {
     return next(new ApiError(400, "Content can not be empty!"));
   }
 
   try {
     const { email, password, firstName, lastName } = req.body;
-    const response = await authService.signUp(
+    const response = await authService.signUp({
       email,
       password,
       firstName,
-      lastName
-    );
+      lastName,
+    });
+
     return res.status(201).json({
       message: "User registered successfully",
       data: response,
@@ -29,14 +42,16 @@ exports.signUp = async (req, res, next) => {
   }
 };
 
-// Callback function to verify email after sign up to update user
-exports.verifyEmailCallback = async (req, res, next) => {
+/**
+ * Controller function to handle email verification callback
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next middleware function
+ * @returns {Promise<void>}
+ */
+const verifyEmailCallback = async (req, res, next) => {
   try {
-    const { token } = req.body;
-    if (!token) {
-      return next(new ApiError(400, "Missing token"));
-    }
-    await authService.verifyEmailCallback(token);
+    await authService.verifyEmailCallback(req.user._id);
     return res.status(200).json({
       message: "Email verified successfully",
     });
@@ -50,15 +65,22 @@ exports.verifyEmailCallback = async (req, res, next) => {
   }
 };
 
-// Controller function to handle user sign in
-exports.signIn = async (req, res, next) => {
+/**
+ * Controller function to handle user sign in requests
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next middleware function
+ * @returns {Promise<void>}
+ */
+const signIn = async (req, res, next) => {
+  // Check if request body is empty
   if (!req.body) {
     return next(new ApiError(400, "Content can not be empty!"));
   }
 
   try {
     const { email, password } = req.body;
-    const response = await authService.signIn(email, password);
+    const response = await authService.signIn({ email, password });
     return res.status(200).json({
       message: "User signed in successfully",
       data: response,
@@ -71,4 +93,10 @@ exports.signIn = async (req, res, next) => {
       )
     );
   }
+};
+
+module.exports = {
+  signUp,
+  verifyEmailCallback,
+  signIn,
 };

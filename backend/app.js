@@ -8,6 +8,7 @@ const {
 
 const app = express();
 const authRouter = require("./app/routes/auth.route");
+const userRouter = require("./app/routes/user.route");
 
 app.use(cors());
 app.use(express.json());
@@ -19,6 +20,9 @@ app.get("/", (req, res) => {
 
 // Auth routes
 app.use("/api/auth", authRouter);
+
+// User routes
+app.use("/api/users", userRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

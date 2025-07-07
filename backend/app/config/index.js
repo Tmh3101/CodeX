@@ -11,6 +11,7 @@ const config = {
     url: process.env.SUPABASE_URL || "https://your-supabase-url.supabase.co",
     serviceRoleKey:
       process.env.SUPABASE_SERVICE_ROLE_KEY || "your-service-role-key",
+    jwtSecret: process.env.SUPABASE_JWT_SECRET || "your-jwt-secret",
   },
 };
 

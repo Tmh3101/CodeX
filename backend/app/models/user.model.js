@@ -1,12 +1,24 @@
+/**
+ * User model
+ * Represents users synced from Supabase Auth
+ *
+ * Fields:
+ * - _id: Supabase Auth UUID
+ * - email, phone, etc.
+ *
+ * Partial unique index on phone:
+ * MongoDB allows multiple null phone values,
+ * but enforces uniqueness when phone is not null.
+ */
+
 const mongoose = require("mongoose");
 const Role = require("../enums/role.enum");
 
 const userSchema = new mongoose.Schema(
   {
-    // id get from supabase auth (uuid)
     _id: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    phone: { type: String, unique: true, default: null },
+    phone: { type: String, default: null },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     dateOfBirth: { type: Date, default: null },
@@ -19,8 +31,20 @@ const userSchema = new mongoose.Schema(
     createdAt: { type: Date, default: Date.now },
   },
   {
-    _id: false, // không để Mongoose tự sinh ObjectId
-    versionKey: false, // không sử dụng trường __v
+    _id: false, // do not create a separate _id field
+    versionKey: false, // do not create __v field
+  }
+);
+
+// MongoDB partial index to allow multiple users with null phone
+// Without this, MongoDB considers multiple nulls as duplicates
+userSchema.index(
+  { phone: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      phone: { $exists: true, $ne: null },
+    },
   }
 );
 

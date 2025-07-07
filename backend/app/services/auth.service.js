@@ -1,60 +1,91 @@
+/**
+ * Auth service
+ * Handles user authentication operations such as sign up, sign in, and email verification
+ * This service interacts with Supabase Auth for user management
+ * and uses the local User model for additional user data management into the DB
+ */
+
 const supabase = require("../utils/supabaseClient");
-const jwt = require("jsonwebtoken");
 const userService = require("./user.service");
+const User = require("../models/user.model");
 const { convertToSupabaseUser, convertToUser } = require("../utils/user.util");
 
-require("dotenv").config();
-
-// Sign up service to create a new user
-const signUp = async (email, password, firstName, lastName) => {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: convertToSupabaseUser({
-        email,
-        firstName,
-        lastName,
-      }),
-    },
-  });
-
-  if (error) throw new Error(error.message);
-
-  // Create a new User in mongoDB from the Supabase user_metadata
-  const newUser = userService.createUser(convertToUser(data.user));
-
-  // Save the new user to MongoDB
+/**
+ * Sign up service to create a new user with email verification
+ * This function creates a new user in Supabase and local database
+ * @param {Object} signUpData - User sign up data containing email, password, firstName, lastName
+ * @returns {Promise<Object>} - Returns the newly created reader profile
+ */
+const signUp = async (signUpData) => {
   try {
-    await newUser.save();
-  } catch (dbError) {
-    throw new Error(`Database error: ${dbError.message}`);
+    const { email, password, firstName, lastName } = signUpData;
+
+    // Check if the user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      throw new Error("User already exists with this email");
+    }
+
+    // Create a new user in Supabase
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: convertToSupabaseUser({
+          email,
+          firstName,
+          lastName,
+        }),
+      },
+    });
+
+    if (error) {
+      console.error("Supabase sign up error:", error);
+      throw new Error(error.message);
+    }
+
+    // Create a new user in the local database
+    const newUser = await userService.createUser(convertToUser(data.user));
+
+    return newUser;
+  } catch (err) {
+    throw new Error(`Sign up failed: ${err.message}`);
   }
-  return newUser;
 };
 
-// Verify email callback service to update the user's email verification status
-const verifyEmailCallback = async (token) => {
+/** * Callback function to verify email after sign up
+ * This function updates the user's email verification status in the local database
+ * @param {string} userID - JWT token containing user ID (sub)
+ */
+const verifyEmailCallback = async (userID) => {
   try {
-    // Decode token để lấy user_id (sub)
-    const decoded = jwt.decode(token);
-    const userId = decoded?.sub;
-    if (!userId) throw new Error("Invalid token: user ID not found");
+    // Check if the user exists in the local database
+    const existingUser = await User.findById(userID);
+    if (!existingUser) {
+      throw new Error("User not found");
+    }
 
-    await User.findByIdAndUpdate(userId, { emailVerified: true });
+    // Update the user's email verification status in the local database
+    await User.findByIdAndUpdate(userID, { emailVerified: true });
   } catch (err) {
     throw new Error(`Email verification failed: ${err.message}`);
   }
 };
 
-// Sign in service to authenticate a user
-const signIn = async (email, password) => {
+/** * Sign in service to authenticate a user
+ * This function checks the user's credentials and returns access and refresh tokens
+ * @param {Object} signInData - User sign in data containing email and password
+ * @returns {Promise<Object>} - Returns access and refresh tokens
+ */
+const signIn = async (signInData) => {
+  const { email, password } = signInData;
+
   // Check if the user exists and is active
   const user = await User.findOne({ email });
-  if (!user || !user.isActive) {
-    throw new Error("Account is not active or does not exist");
-  }
+  if (!user) throw new Error("Account does not exist");
+  if (!user.isActive) throw new Error("Account is not active");
 
+  // Authenticate the user with Supabase
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -62,11 +93,11 @@ const signIn = async (email, password) => {
 
   if (error) throw new Error(error.message);
 
-  const response = {
+  // Return access token and refresh token from the Supabase session
+  return {
     accessToken: data.session.access_token,
     refreshToken: data.session.refresh_token,
   };
-  return response;
 };
 
 module.exports = {

@@ -1,10 +1,22 @@
+/**
+ * Auth Routes
+ * This module defines the routes for user authentication
+ */
+
 const express = require("express");
-const auth = require("../controllers/auth.controller");
+const authMiddleware = require("../middlewares/auth.middleware");
+const authController = require("../controllers/auth.controller");
 
 const router = express.Router();
 
-router.post("/sign-up", auth.signUp);
-router.post("/verify-email", auth.verifyEmailCallback);
-router.post("/sign-in", auth.signIn);
+router.post("/sign-up", authController.signUp);
+
+router.post(
+  "/verify-email",
+  authMiddleware,
+  authController.verifyEmailCallback
+);
+
+router.post("/sign-in", authController.signIn);
 
 module.exports = router;

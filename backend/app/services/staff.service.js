@@ -1,32 +1,37 @@
+/**
+ * Staff service
+ * Handles staff management operations
+ */
+
 const Staff = require("../models/staff.model");
-const User = require("../models/user.model");
-const userService = require("./user.service");
-const Role = require("../enums/role.enum");
 
-const createStaff = async (staffData) => {
+// Funtion to create a unique staffId based on max existing staff id (max + 1)
+const getNextStaffId = async () => {
   try {
-    // Check if the user already exists
-    const existingUser = await User.findById(staffData._id);
-    if (existingUser) {
-      throw new Error("User already exists");
-    }
+    const lastStaff = await Staff.findOne().sort({ staffId: -1 });
+    if (!lastStaff) return "NV001"; // If no staff exists, start with NV001
 
-    const newUser = await userService.createUser({
-      email: staffData.email,
-      password: staffData.password,
-      firstName: staffData.firstName,
-      lastName: staffData.lastName,
-      role: Role.STAFF,
-    });
+    const lastId = parseInt(lastStaff.staffId.replace("NV", ""), 10);
+    const nextId = lastId + 1;
+    return `NV${String(nextId).padStart(3, "0")}`; // e.g. NV002, NV003, etc.
+  } catch (error) {
+    console.error("Error getting next staff ID:", error);
+    throw new Error("Failed to generate next staff ID");
+  }
+};
 
-    // Count the number of existing staff members
-    const staffCount = await Staff.countDocuments();
-    const staffId = `NV${String(staffCount + 1).padStart(3, "0")}`;
-
-    // Create a new staff member
+/**
+ * Create a new staff member in the local database referencing User model
+ * Generates a unique staffId based on existing staff count
+ * @param {String} userID - User ID from User model (Supabase Auth UUID)
+ * @returns {Promise<Object>} - Newly created staff member info
+ * @throws {Error} - if staff creation fails
+ */
+const createStaff = async (userID) => {
+  try {
     const newStaff = new Staff({
-      _id: newUser._id,
-      staffId: staffId,
+      _id: userID,
+      staffId: getNextStaffId(),
     });
     await newStaff.save();
 
@@ -37,31 +42,25 @@ const createStaff = async (staffData) => {
   }
 };
 
-const seedStaff = async () => {
+/**
+ * Delete a staff member by user ID
+ * @param {String} userID - User ID from User model (Supabase Auth UUID
+ * @returns {Promise<void>} - Resolves when staff is deleted
+ * @throws {Error} - if staff deletion fails
+ */
+const deleteStaff = async (userID) => {
   try {
-    const staffExist = await User.countDocuments({ role: "staff" });
-
-    if (staffExist > 0) {
-      console.log("Staff account already exists. Skipping seed.");
-      return;
+    const result = await Staff.findByIdAndDelete(userID);
+    if (!result) {
+      throw new Error("Staff not found");
     }
-
-    const defaultStaff = {
-      email: "staff001@gmail.com",
-      password: "12345678",
-      firstName: "Staff",
-      lastName: "001",
-    };
-
-    const newStaff = await createStaff(defaultStaff);
-    const staffFullInfo = await newStaff.getUserInfo();
-    console.log("Default staff account created:", staffFullInfo);
   } catch (error) {
-    console.error(error);
+    console.error("Error deleting staff:", error);
+    throw error;
   }
 };
 
 module.exports = {
   createStaff,
-  seedStaff,
+  deleteStaff,
 };
