@@ -3,6 +3,7 @@
  * Handles reader management operations
  */
 
+const Gender = require("../enums/gender.enum");
 const Reader = require("../models/reader.model");
 
 // Funtion to create a unique readerId based on max existing staff id (max + 1)
@@ -43,6 +44,36 @@ const createReader = async (userID) => {
 };
 
 /**
+ * Update a reader member's information
+ * @param {String} userID - User ID from User model (Supabase Auth UUID
+ * @param {Object} updateData - Object containing fields to update
+ * @returns {Promise<Object>} - Updated reader member info
+ */
+const updateReader = async (userID, updateData) => {
+  try {
+    // Validate gender if provided
+    if (updateData.gender) {
+      const validGenders = Object.values(Gender);
+      if (!validGenders.includes(updateData)) {
+        throw new Error("Gender must be one of: " + validGenders.join(", "));
+      }
+    }
+
+    const updatedReader = await Reader.findByIdAndUpdate(userID, updateData, {
+      new: true,
+      runValidators: true,
+    });
+    if (!updatedReader) {
+      throw new Error("Reader not found");
+    }
+    return updatedReader;
+  } catch (error) {
+    console.error("Error updating reader:", error);
+    throw error;
+  }
+};
+
+/**
  * Delete a reader member by user ID
  * @param {String} userID - User ID from User model (Supabase Auth UUID)
  * @returns {Promise<void>} - Resolves when reader is deleted
@@ -62,5 +93,6 @@ const deleteReader = async (userID) => {
 
 module.exports = {
   createReader,
+  updateReader,
   deleteReader,
 };

@@ -50,7 +50,44 @@ const convertToUser = (user) => {
   };
 };
 
+/**
+ * Checks if a password meets the strength requirements
+ * - At least 8 characters long
+ * - Contains at least one uppercase letter
+ * - Contains at least one lowercase letter
+ * - Contains at least one number
+ * - Contains at least one special character
+ * @param {string} password - The password to check
+ * @returns {boolean} - True if the password is strong enough, otherwise throws an error
+ * @throws {Error} - If the password does not meet the strength requirements
+ */
+const checkPasswordStrength = (password) => {
+  const minLength = 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  if (password.length < minLength) {
+    throw new Error(`Password must be at least ${minLength} characters long`);
+  }
+  if (!hasUpperCase) {
+    throw new Error("Password must contain at least one uppercase letter");
+  }
+  if (!hasLowerCase) {
+    throw new Error("Password must contain at least one lowercase letter");
+  }
+  if (!hasNumbers) {
+    throw new Error("Password must contain at least one number");
+  }
+  if (!hasSpecialChars) {
+    throw new Error("Password must contain at least one special character");
+  }
+  return true; // Password is strong enough
+};
+
 module.exports = {
   convertToSupabaseUser,
   convertToUser,
+  checkPasswordStrength,
 };

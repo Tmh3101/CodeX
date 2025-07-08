@@ -148,10 +148,92 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+/**
+ * Controller function to handle user profile update request
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next middleware function
+ * @returns {import('express').Response} - JSON response with updated user profile or error
+ * @throws {ApiError} - if an error occurs during user profile update
+ */
+const updateUserProfile = async (req, res, next) => {
+  const user = req.user;
+  if (!req.body) {
+    return next(new ApiError(400, "Content can not be empty!"));
+  }
+
+  try {
+    const response = await userService.updateUserProfile(user._id, req.body);
+    return res.status(200).json({
+      message: "User profile updated successfully",
+      data: response,
+    });
+  } catch (error) {
+    return next(
+      new ApiError(
+        500,
+        error.message || "Some error occurred while updating the user profile."
+      )
+    );
+  }
+};
+
+/**
+ * Controller function to handle user password change request
+ * Just change password on Supabase Auth
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next middleware function
+ * @returns {import('express').Response} - JSON response with password change status or error
+ * @throws {ApiError} - if an error occurs during user password change
+ */
+const changeUserPassword = async (req, res, next) => {
+  const user = req.user;
+  if (!req.body) {
+    return next(new ApiError(400, "Content can not be empty!"));
+  }
+
+  if (!req.body.currentPassword) {
+    return next(new ApiError(400, "Current password is required"));
+  }
+
+  if (!req.body.newPassword) {
+    return next(new ApiError(400, "New password is required"));
+  }
+
+  if (req.body.newPassword === req.body.currentPassword) {
+    return next(
+      new ApiError(400, "New password must be different from current password")
+    );
+  }
+
+  try {
+    const { currentPassword, newPassword } = req.body;
+    await userService.changeUserPassword(
+      user._id,
+      currentPassword,
+      newPassword
+    );
+
+    return res.status(200).json({
+      message: "User password changed successfully",
+    });
+  } catch (error) {
+    return next(
+      new ApiError(
+        500,
+        error.message || "Some error occurred while changing the user password."
+      )
+    );
+  }
+};
+
 module.exports = {
   createUser,
   getAllUsers,
   getUserById,
   updateUser,
   deleteUser,
+  updateUserProfile,
+  changeUserPassword,
 };

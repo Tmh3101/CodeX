@@ -10,14 +10,13 @@ const userController = require("../controllers/user.controller");
 const Role = require("../enums/role.enum");
 
 const router = express.Router(); // Express router instance
+router.use(authMiddleware); // Apply authentication middleware to all routes
 
 /**
  * Define routes for user management - Staff (admin) only
  * These routes are protected and require staff authorization
  * to access user management functionalities.
  */
-
-router.use(authMiddleware); // Apply authentication middleware to all routes
 
 // Create new user and get all users
 router
@@ -33,9 +32,14 @@ router
   .delete(authorize(Role.STAFF), userController.deleteUser);
 
 /**
- * Define routes for user management - Public access
- * These routes are accessible to all users
- * without any authentication or authorization.
+ * Define routes for user profile management
+ * These routes allow users to update their own profile
  */
+
+// Update user profile
+router.put("/me/update-profile", userController.updateUserProfile);
+
+// Change user password
+router.put("/me/change-password", userController.changeUserPassword);
 
 module.exports = router;
