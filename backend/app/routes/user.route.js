@@ -6,6 +6,7 @@
 const express = require("express");
 const authMiddleware = require("../middlewares/auth.middleware");
 const authorize = require("../middlewares/authorize.middleware");
+const upload = require("../middlewares/upload.middleware");
 const userController = require("../controllers/user.controller");
 const Role = require("../enums/role.enum");
 
@@ -41,5 +42,15 @@ router.put("/me/update-profile", userController.updateUserProfile);
 
 // Change user password
 router.put("/me/change-password", userController.changeUserPassword);
+
+// Upload user avatar
+router.put(
+  "/me/upload-avatar",
+  upload.single("avatar"), // Middleware to handle file upload with field name 'avatar' of the form data
+  userController.uploadAvatar
+);
+
+// Delete user avatar
+router.put("/me/delete-avatar", userController.deleteAvatar);
 
 module.exports = router;

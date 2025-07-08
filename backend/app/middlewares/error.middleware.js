@@ -24,11 +24,13 @@ const notFoundHandler = (req, res, next) => {
  * @param {import('express').NextFunction} next - Express next middleware function
  * @return {void}
  */
-const errorHandler = (err, req, res, next) => {
-  return res.status(err.statusCode || 500).json({
-    message: err.message || "Internal Server Error",
+function errorHandler(err, req, res, next) {
+  const statusCode = err.statusCode || 500;
+  const errorMessage = err.message || "Internal server error";
+  res.status(statusCode).json({
+    message: errorMessage,
   });
-};
+}
 
 module.exports = {
   errorHandler,

@@ -14,6 +14,10 @@
 const mongoose = require("mongoose");
 const Role = require("../enums/role.enum");
 
+// *NOTE(fix): Nên tách user model ra thêm một model nữa là auth model
+// - auth model sẽ lưu thông tin cho user_metadata
+// - user model sẽ lưu thông tin cho profile của user
+// --> Giảm kích thước payload của jwt, vì supabase auth sử dụng user_metadata để làm pyload
 const userSchema = new mongoose.Schema(
   {
     _id: { type: String, required: true },

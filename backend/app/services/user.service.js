@@ -7,6 +7,7 @@ const supabase = require("../utils/supabaseClient");
 const staffService = require("./staff.service");
 const readerService = require("./reader.service");
 const Role = require("../enums/role.enum");
+const ApiError = require("../api-error");
 const User = require("../models/user.model");
 const Staff = require("../models/staff.model");
 const {
@@ -14,6 +15,11 @@ const {
   convertToUser,
   checkPasswordStrength,
 } = require("../utils/user.util");
+const {
+  uploadFileToSupabase,
+  deleteFileFromSupabase,
+  getPublicUrl,
+} = require("../utils/file.util");
 
 /**
  * Create a new user in Supabase and sync with local database with role handling
@@ -22,16 +28,21 @@ const {
  * @throws {Error} - if user already exists or Supabase error occurs
  */
 const createUser = async (userData) => {
-  try {
-    // Check if user already exists in local database
-    const existingUser = await User.findOne({ email: userData.email });
-    if (existingUser) {
-      throw new Error("User already exists");
-    }
+  // Check if user already exists in local database
+  const existingUser = await User.findOne({ email: userData.email });
+  if (existingUser) {
+    throw new ApiError(400, "Email is already registered");
+  }
 
+  try {
     // Validate password strength
     checkPasswordStrength(userData.password);
+  } catch (error) {
+    console.error("Password validation error:", error);
+    throw new ApiError(400, error.message || "Invalid password");
+  }
 
+  try {
     // Create user in Supabase Auth using admin API without email confirmation
     const { data, error } = await supabase.auth.admin.createUser({
       email: userData.email,
@@ -42,7 +53,10 @@ const createUser = async (userData) => {
 
     if (error) {
       console.error("Supabase error:", error);
-      throw new Error("Failed to create user in Supabase");
+      throw new ApiError(
+        400,
+        error.message || "Failed to create user in Supabase"
+      );
     }
 
     let newUser = new User(convertToUser(data.user));
@@ -88,7 +102,7 @@ const getUserById = async (userID) => {
   try {
     const user = await User.findById(userID);
     if (!user) {
-      throw new Error("User not found");
+      throw new ApiError(404, "User not found");
     }
     return user;
   } catch (error) {
@@ -123,7 +137,7 @@ const updateUser = async (userID, updateData) => {
     });
 
     if (!updatedUser) {
-      throw new Error("User not found");
+      throw new ApiError(404, "User not found");
     }
 
     // Update user in Supabase Auth
@@ -154,7 +168,7 @@ const deleteUser = async (userID) => {
     // Find user in local database
     const user = await User.findById(userID);
     if (!user) {
-      throw new Error("User not found");
+      throw new ApiError(404, "User not found");
     }
 
     // Delete user from Supabase Auth
@@ -194,7 +208,7 @@ const updateUserProfile = async (userID, updateData) => {
     // Check if user exists
     const user = await User.findById(userID);
     if (!user) {
-      throw new Error("User not found");
+      throw new ApiError(404, "User not found");
     }
 
     // Remove fields that should not be updated
@@ -248,44 +262,137 @@ const updateUserProfile = async (userID, updateData) => {
  * @throws {Error} - if user not found or password change fails
  */
 const changeUserPassword = async (userID, currentPassword, newPassword) => {
+  // Check if user exists
+  const user = await User.findById(userID);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (currentPassword === newPassword) {
+    throw new ApiError(
+      400,
+      "New password cannot be the same as current password"
+    );
+  }
+
+  // Check current password
+  const { data, error: curPwdError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+
+  if (curPwdError) {
+    console.error("Supabase error:", curPwdError);
+    throw new ApiError(400, "Current password is incorrect or user not found");
+  }
+
+  // Validate new password strength
+  try {
+    checkPasswordStrength(newPassword);
+  } catch (error) {
+    console.error("Password validation error:", error);
+    throw new ApiError(400, error.message || "Invalid new password");
+  }
+
+  // Change password in Supabase Auth
+  const { error: changePwdError } = await supabase.auth.admin.updateUserById(
+    userID,
+    { password: newPassword }
+  );
+
+  if (changePwdError) {
+    console.error("Supabase error:", changePwdError);
+    throw new Error("Failed to change user password in Supabase");
+  }
+
+  console.log(`Password for user ${userID} changed successfully`);
+};
+
+/**
+ * Delete user avatar from Supabase storage
+ * This is used when the user deletes their avatar
+ * @param {string} userID - ID of the user to update
+ * @returns {Promise<Object>} - updated user info with avatar URL removed
+ * @throws {Error} - if user not found or deletion fails
+ */
+const deleteAvatar = async (userID) => {
   try {
     // Check if user exists
     const user = await User.findById(userID);
     if (!user) {
-      throw new Error("User not found");
+      throw new ApiError(404, "User not found");
     }
 
-    // Check current password
-    const { data, error: curPwdError } = await supabase.auth.signInWithPassword(
-      {
-        email: user.email,
-        password: currentPassword,
-      }
-    );
-
-    if (curPwdError) {
-      console.error("Supabase error:", curPwdError);
-      throw new Error("Current password is incorrect");
+    // If no avatar URL, nothing to delete
+    if (!user.avatarUrl) {
+      console.log("No avatar to delete for user:", userID);
+      return user;
     }
 
-    // Validate new password strength
-    checkPasswordStrength(newPassword);
+    // Delete avatar from Supabase storage
+    const fileName = user.avatarUrl.split("/").pop();
+    await deleteFileFromSupabase("avatars", fileName);
 
-    // Change password in Supabase Auth
-    const { error: changePwdError } = await supabase.auth.admin.updateUserById(
-      userID,
-      { password: newPassword }
-    );
+    // Update user's avatar URL in local database and Supabase Auth
+    const updatedUser = await updateUserProfile(userID, {
+      avatarUrl: null,
+    });
 
-    if (changePwdError) {
-      console.error("Supabase error:", changePwdError);
-      throw new Error("Failed to change user password in Supabase");
-    }
-
-    console.log(`Password for user ${userID} changed successfully`);
+    console.log(`Avatar for user ${userID} deleted successfully`);
+    return updatedUser;
   } catch (error) {
-    console.error("Error changing user password:", error);
-    throw new Error("Failed to change user password: " + error.message);
+    console.error("Error deleting user avatar:", error);
+    throw new Error("Failed to delete user avatar: " + error.message);
+  }
+};
+
+/**
+ * Upload user avatar to Supabase storage
+ * This is used when the user uploads their avatar
+ * @param {string} userID - ID of the user to update
+ * @param {Buffer} file - avatar image
+ * @returns {Promise<Object>} - updated user info with avatar URL
+ * @throws {Error} - if user not found or upload fails
+ */
+const uploadAvatar = async (userID, file) => {
+  try {
+    // Check if user exists
+    const user = await User.findById(userID);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    // Save old avatar URL if exists
+    let oldAvatarUrl = null;
+    if (user.avatarUrl) {
+      oldAvatarUrl = user.avatarUrl;
+    }
+
+    // Upload avatar to Supabase storage and get public URL
+    const fileExt = file.originalname.split(".").pop();
+    const fileName = `${user._id}_${Date.now()}.${fileExt}`;
+
+    const data = await uploadFileToSupabase("avatars", file, fileName);
+    const publicUrl = getPublicUrl("avatars", data.path);
+    console.log(`Avatar uploaded to Supabase storage: ${publicUrl}`);
+
+    // Update user's information with new avatar URL
+    const updatedUser = await updateUserProfile(userID, {
+      avatarUrl: publicUrl,
+    });
+
+    // If old avatar exists, delete it from Supabase storage
+    if (oldAvatarUrl) {
+      console.log(`Deleting old avatar: ${oldAvatarUrl}`);
+      const oldFileName = oldAvatarUrl.split("/").pop();
+      await deleteFileFromSupabase("avatars", oldFileName);
+    }
+
+    console.log(`Avatar for user ${userID} uploaded successfully`);
+    return updatedUser;
+  } catch (error) {
+    console.error("Error uploading user avatar:", error);
+    throw new Error("Failed to upload user avatar: " + error.message);
   }
 };
 
@@ -327,5 +434,7 @@ module.exports = {
   deleteUser,
   updateUserProfile,
   changeUserPassword,
+  deleteAvatar,
+  uploadAvatar,
   seedStaff,
 };

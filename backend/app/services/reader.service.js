@@ -4,6 +4,7 @@
  */
 
 const Gender = require("../enums/gender.enum");
+const ApiError = require("../api-error");
 const Reader = require("../models/reader.model");
 
 // Funtion to create a unique readerId based on max existing staff id (max + 1)
@@ -39,7 +40,7 @@ const createReader = async (userID) => {
     return newReader;
   } catch (error) {
     console.error("Error creating reader:", error);
-    throw error;
+    throw new Error("Failed to create reader member: " + error.message);
   }
 };
 
@@ -55,7 +56,10 @@ const updateReader = async (userID, updateData) => {
     if (updateData.gender) {
       const validGenders = Object.values(Gender);
       if (!validGenders.includes(updateData)) {
-        throw new Error("Gender must be one of: " + validGenders.join(", "));
+        throw new ApiError(
+          400,
+          `Gender must be one of: ${validGenders.join(", ")}`
+        );
       }
     }
 
@@ -64,12 +68,12 @@ const updateReader = async (userID, updateData) => {
       runValidators: true,
     });
     if (!updatedReader) {
-      throw new Error("Reader not found");
+      throw new ApiError(404, "Reader not found");
     }
     return updatedReader;
   } catch (error) {
     console.error("Error updating reader:", error);
-    throw error;
+    throw new Error("Failed to update reader member: " + error.message);
   }
 };
 
@@ -83,11 +87,11 @@ const deleteReader = async (userID) => {
   try {
     const result = await Reader.findByIdAndDelete(userID);
     if (!result) {
-      throw new Error("Reader not found");
+      throw new ApiError(404, "Reader not found");
     }
   } catch (error) {
     console.error("Error deleting reader:", error);
-    throw error;
+    throw new Error("Failed to delete reader member: " + error.message);
   }
 };
 

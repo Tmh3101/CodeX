@@ -3,6 +3,7 @@
  * Handles staff management operations
  */
 
+const ApiError = require("../api-error");
 const Staff = require("../models/staff.model");
 
 // Funtion to create a unique staffId based on max existing staff id (max + 1)
@@ -38,7 +39,7 @@ const createStaff = async (userID) => {
     return newStaff;
   } catch (error) {
     console.error("Error creating staff:", error);
-    throw error;
+    throw new Error("Failed to create staff member: " + error.message);
   }
 };
 
@@ -52,11 +53,11 @@ const deleteStaff = async (userID) => {
   try {
     const result = await Staff.findByIdAndDelete(userID);
     if (!result) {
-      throw new Error("Staff not found");
+      throw new ApiError(404, "Staff not found");
     }
   } catch (error) {
     console.error("Error deleting staff:", error);
-    throw error;
+    throw new Error("Failed to delete staff member: " + error.message);
   }
 };
 

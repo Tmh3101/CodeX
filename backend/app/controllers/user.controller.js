@@ -34,12 +34,10 @@ const createUser = async (req, res, next) => {
       data: response,
     });
   } catch (error) {
-    return next(
-      new ApiError(
-        500,
-        error.message || "Some error occurred while creating the user."
-      )
-    );
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
   }
 };
 
@@ -59,12 +57,10 @@ const getAllUsers = async (req, res, next) => {
       data: response,
     });
   } catch (error) {
-    return next(
-      new ApiError(
-        500,
-        error.message || "Some error occurred while retrieving users."
-      )
-    );
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
   }
 };
 
@@ -84,12 +80,10 @@ const getUserById = async (req, res, next) => {
       data: response,
     });
   } catch (error) {
-    return next(
-      new ApiError(
-        500,
-        error.message || "Some error occurred while retrieving the user."
-      )
-    );
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
   }
 };
 
@@ -114,12 +108,10 @@ const updateUser = async (req, res, next) => {
       data: response,
     });
   } catch (error) {
-    return next(
-      new ApiError(
-        500,
-        error.message || "Some error occurred while updating the user."
-      )
-    );
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
   }
 };
 
@@ -139,12 +131,10 @@ const deleteUser = async (req, res, next) => {
       message: "User deleted successfully",
     });
   } catch (error) {
-    return next(
-      new ApiError(
-        500,
-        error.message || "Some error occurred while deleting the user."
-      )
-    );
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
   }
 };
 
@@ -169,12 +159,10 @@ const updateUserProfile = async (req, res, next) => {
       data: response,
     });
   } catch (error) {
-    return next(
-      new ApiError(
-        500,
-        error.message || "Some error occurred while updating the user profile."
-      )
-    );
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
   }
 };
 
@@ -201,12 +189,6 @@ const changeUserPassword = async (req, res, next) => {
     return next(new ApiError(400, "New password is required"));
   }
 
-  if (req.body.newPassword === req.body.currentPassword) {
-    return next(
-      new ApiError(400, "New password must be different from current password")
-    );
-  }
-
   try {
     const { currentPassword, newPassword } = req.body;
     await userService.changeUserPassword(
@@ -219,12 +201,61 @@ const changeUserPassword = async (req, res, next) => {
       message: "User password changed successfully",
     });
   } catch (error) {
-    return next(
-      new ApiError(
-        500,
-        error.message || "Some error occurred while changing the user password."
-      )
-    );
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
+  }
+};
+
+/**
+ * Controller function to handle user avatar upload request
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next middleware function
+ * @return {import('express').Response} - JSON response with avatar upload status or error
+ * @throws {ApiError} - if an error occurs during avatar upload
+ */
+const uploadAvatar = async (req, res, next) => {
+  const user = req.user;
+  if (!req.file) {
+    return next(new ApiError(400, "No file uploaded"));
+  }
+
+  try {
+    const response = await userService.uploadAvatar(user._id, req.file);
+    return res.status(200).json({
+      message: "Avatar uploaded successfully",
+      data: response,
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
+  }
+};
+
+/**
+ * Controller function to handle user avatar deletion request
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next middleware function
+ * @returns {import('express').Response} - JSON response with avatar deletion status or error
+ * @throws {ApiError} - if an error occurs during avatar deletion
+ */
+const deleteAvatar = async (req, res, next) => {
+  const user = req.user;
+  try {
+    await userService.deleteAvatar(user._id);
+    return res.status(200).json({
+      message: "Avatar deleted successfully",
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
   }
 };
 
@@ -236,4 +267,6 @@ module.exports = {
   deleteUser,
   updateUserProfile,
   changeUserPassword,
+  uploadAvatar,
+  deleteAvatar,
 };

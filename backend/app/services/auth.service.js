@@ -7,6 +7,7 @@
 
 const supabase = require("../utils/supabaseClient");
 const userService = require("./user.service");
+const ApiError = require("../api-error");
 const User = require("../models/user.model");
 const { convertToSupabaseUser, convertToUser } = require("../utils/user.util");
 
@@ -23,7 +24,7 @@ const signUp = async (signUpData) => {
     // Check if the user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      throw new Error("User already exists with this email");
+      throw new ApiError(400, "Email is already registered");
     }
 
     // Create a new user in Supabase
@@ -41,7 +42,7 @@ const signUp = async (signUpData) => {
 
     if (error) {
       console.error("Supabase sign up error:", error);
-      throw new Error(error.message);
+      throw new ApiError(400, error.message || "Sign up failed");
     }
 
     // Create a new user in the local database
@@ -62,7 +63,7 @@ const verifyEmailCallback = async (userID) => {
     // Check if the user exists in the local database
     const existingUser = await User.findById(userID);
     if (!existingUser) {
-      throw new Error("User not found");
+      throw new ApiError(404, "User not found");
     }
 
     // Update the user's email verification status in the local database
@@ -82,8 +83,9 @@ const signIn = async (signInData) => {
 
   // Check if the user exists and is active
   const user = await User.findOne({ email });
-  if (!user) throw new Error("Account does not exist");
-  if (!user.isActive) throw new Error("Account is not active");
+  if (!user) throw new ApiError(404, "Email is not registered");
+  if (!user.emailVerified) throw new ApiError(403, "Email is not verified");
+  if (!user.isActive) throw new ApiError(403, "Account is not active");
 
   // Authenticate the user with Supabase
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -91,7 +93,10 @@ const signIn = async (signInData) => {
     password,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("Supabase sign in error:", error);
+    throw new ApiError(400, "Password is incorrect");
+  }
 
   // Return access token and refresh token from the Supabase session
   return {

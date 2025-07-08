@@ -17,7 +17,6 @@ async function startServer() {
 
     // Seed the staff data
     await userService.seedStaff();
-    console.log("Staff data seeded successfully.");
   } catch (error) {
     console.log("Cannot connect to the database!", error);
     process.exit();

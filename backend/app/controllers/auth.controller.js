@@ -33,12 +33,10 @@ const signUp = async (req, res, next) => {
       data: response,
     });
   } catch (error) {
-    return next(
-      new ApiError(
-        500,
-        error.message || "Some error occurred while signing up the user."
-      )
-    );
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
   }
 };
 
@@ -56,12 +54,10 @@ const verifyEmailCallback = async (req, res, next) => {
       message: "Email verified successfully",
     });
   } catch (error) {
-    return next(
-      new ApiError(
-        500,
-        error.message || "Some error occurred while verifying the email."
-      )
-    );
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
   }
 };
 
@@ -86,12 +82,10 @@ const signIn = async (req, res, next) => {
       data: response,
     });
   } catch (error) {
-    return next(
-      new ApiError(
-        500,
-        error.message || "Some error occurred while signing in the user."
-      )
-    );
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
   }
 };
 
