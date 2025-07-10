@@ -9,7 +9,11 @@ const supabase = require("../utils/supabaseClient");
 const userService = require("./user.service");
 const ApiError = require("../api-error");
 const User = require("../models/user.model");
-const { convertToSupabaseUser, convertToUser } = require("../utils/user.util");
+const {
+  convertToSupabaseUser,
+  convertToUser,
+  checkPasswordStrength,
+} = require("../utils/user.util");
 
 /**
  * Sign up service to create a new user with email verification
@@ -26,6 +30,9 @@ const signUp = async (signUpData) => {
     if (existingUser) {
       throw new ApiError(400, "Email is already registered");
     }
+
+    // Validate password strength
+    checkPasswordStrength(password);
 
     // Create a new user in Supabase
     const { data, error } = await supabase.auth.signUp({
@@ -46,7 +53,7 @@ const signUp = async (signUpData) => {
     }
 
     // Create a new user in the local database
-    const newUser = await userService.createUser(convertToUser(data.user));
+    const newUser = await User.create(convertToUser(data.user));
 
     return newUser;
   } catch (err) {

@@ -134,3 +134,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# seed files
+GoodReads_100k_books.csv
+data_proc.ipynb

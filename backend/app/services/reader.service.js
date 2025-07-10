@@ -31,9 +31,11 @@ const getNextReaderId = async () => {
  */
 const createReader = async (userID) => {
   try {
+    const nextReaderId = await getNextReaderId();
+
     const newReader = new Reader({
       _id: userID,
-      readerId: getNextReaderId(),
+      readerId: nextReaderId,
     });
     await newReader.save();
 

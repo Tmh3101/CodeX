@@ -30,9 +30,11 @@ const getNextStaffId = async () => {
  */
 const createStaff = async (userID) => {
   try {
+    const nextStaffId = await getNextStaffId();
+
     const newStaff = new Staff({
       _id: userID,
-      staffId: getNextStaffId(),
+      staffId: nextStaffId,
     });
     await newStaff.save();
 

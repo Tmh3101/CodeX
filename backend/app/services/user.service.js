@@ -34,6 +34,8 @@ const createUser = async (userData) => {
     throw new ApiError(400, "Email is already registered");
   }
 
+  console.log("Creating user in Supabase:", userData);
+
   try {
     // Validate password strength
     checkPasswordStrength(userData.password);
@@ -413,7 +415,7 @@ const seedStaff = async () => {
     // Create default staff account
     const defaultStaff = {
       email: "staff001@gmail.com",
-      password: "12345678",
+      password: "<nKyKN72",
       firstName: "Staff",
       lastName: "001",
       role: Role.STAFF,

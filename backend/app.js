@@ -9,6 +9,10 @@ const {
 const app = express();
 const authRouter = require("./app/routes/auth.route");
 const userRouter = require("./app/routes/user.route");
+const authorRouter = require("./app/routes/author.route");
+const categoryRouter = require("./app/routes/category.route");
+const publisherRouter = require("./app/routes/publisher.route");
+const bookRouter = require("./app/routes/book.route");
 
 app.use(cors());
 app.use(express.json());
@@ -24,7 +28,22 @@ app.use("/api/auth", authRouter);
 // User routes
 app.use("/api/users", userRouter);
 
+// Author routes
+app.use("/api/authors", authorRouter);
+
+// Category routes
+app.use("/api/categories", categoryRouter);
+
+// Publisher routes
+app.use("/api/publishers", publisherRouter);
+
+// Book routes
+app.use("/api/books", bookRouter);
+
+// Handle 404 Not Found
 app.use(notFoundHandler);
+
+// Global error handler
 app.use(errorHandler);
 
 module.exports = app;
