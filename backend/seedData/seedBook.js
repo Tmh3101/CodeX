@@ -38,10 +38,9 @@ const fectchBookDataByISBN = async (isbn) => {
 
 const seedBooks = async () => {
   // Check book exists
-  const existingBooks = await bookService.getAllBooks();
-  console.log(`Found ${existingBooks.length} existing books in the database.`);
-  if (existingBooks.length > 0) {
-    console.log("Books already exist in the database. Skipping seeding.");
+  const data = await bookService.getAllBooks();
+  if (data.books.length > 0) {
+    console.log(`Found book data in the database`);
     return;
   }
 

@@ -6,9 +6,9 @@
  */
 
 const supabase = require("../utils/supabaseClient");
-const userService = require("./user.service");
 const ApiError = require("../api-error");
 const User = require("../models/user.model");
+const readerService = require("./reader.service");
 const {
   convertToSupabaseUser,
   convertToUser,
@@ -55,7 +55,11 @@ const signUp = async (signUpData) => {
     // Create a new user in the local database
     const newUser = await User.create(convertToUser(data.user));
 
-    return newUser;
+    // create a reader profile for the new user
+    const newReader = await readerService.createReader(newUser._id);
+    const readerInfo = await newReader.getUserInfo();
+
+    return readerInfo;
   } catch (err) {
     throw new Error(`Sign up failed: ${err.message}`);
   }

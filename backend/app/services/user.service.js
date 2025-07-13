@@ -81,13 +81,22 @@ const createUser = async (userData) => {
 
 /**
  * Get all users from the local database
+ * @param {number} skip - number of users to skip for pagination
+ * @param {number} limit - maximum number of users to return
  * @returns {Promise<Array>} - list of all users
  * @throws {Error} - if fetching users fails
  */
-const getAllUsers = async () => {
+const getAllUsers = async (skip = 0, limit = 10) => {
   try {
-    const users = await User.find({});
-    return users;
+    const total = await User.countDocuments({});
+    const users = await User.find().skip(skip).limit(limit);
+    return {
+      totalUsers: total,
+      totalPages: Math.ceil(total / limit),
+      limit,
+      currentPage: Math.ceil(skip / limit) + 1,
+      users: users,
+    };
   } catch (error) {
     console.error("Error fetching users:", error);
     throw new Error("Failed to fetch users: " + error.message);

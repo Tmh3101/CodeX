@@ -28,6 +28,57 @@ const getNextBookId = async () => {
   }
 };
 
+// Get number of pending borrows, approved borrows and available books by bookId
+const getBookStats = async (bookId) => {
+  try {
+    const stats = await Book.aggregate([
+      { $match: { bookId: bookId } },
+      {
+        $lookup: {
+          from: "borrows",
+          localField: "bookId",
+          foreignField: "bookId",
+          as: "borrows",
+        },
+      },
+      {
+        $project: {
+          totalPending: {
+            $size: {
+              $filter: {
+                input: "$borrows",
+                as: "borrow",
+                cond: { $eq: ["$$borrow.status", "PENDING"] },
+              },
+            },
+          },
+          totalApproved: {
+            $size: {
+              $filter: {
+                input: "$borrows",
+                as: "borrow",
+                cond: { $eq: ["$$borrow.status", "APPROVED"] },
+              },
+            },
+          },
+          availableQuantity: "$quantity",
+        },
+      },
+    ]);
+
+    return (
+      stats[0] || {
+        pendingQuatity: 0,
+        approvedQuatity: 0,
+        availableQuantity: 0,
+      }
+    );
+  } catch (error) {
+    console.error("Error getting book stats:", error);
+    throw new Error("Failed to retrieve book stats");
+  }
+};
+
 /**
  * Create a book in the database
  * @param {Object} bookData - The book data to create
@@ -77,16 +128,38 @@ const createBook = async (bookData, coverFile) => {
 
 /**
  * Get all books from the database
+ * @param {Number} skip - Number of documents to skip for pagination
+ * @param {Number} limit - Maximum number of documents to return
  * @return {Promise<Array>} - An array of book documents
  * @throws {ApiError} - If the retrieval fails
  */
-const getAllBooks = async () => {
+const getAllBooks = async (skip = 0, limit = 10) => {
   try {
-    const books = await Book.find({});
+    // get all active books with pagination
+    const books = await Book.find({ isActive: true }).skip(skip).limit(limit);
+
     const bookFullInfo = await Promise.all(
-      books.map((book) => book.getFullInfo())
+      books.map((book) => {
+        return book.getFullInfo().then((info) => {
+          return getBookStats(book.bookId).then((stats) => {
+            return {
+              ...info,
+              ...stats,
+            };
+          });
+        });
+      })
     );
-    return bookFullInfo;
+
+    const total = await Book.countDocuments();
+
+    return {
+      totalBooks: total,
+      totalPages: Math.ceil(total / limit),
+      limit,
+      currentPage: Math.ceil(skip / limit) + 1,
+      books: bookFullInfo,
+    };
   } catch (error) {
     console.error("Error getting all books:", error);
     throw new Error("Failed to retrieve books");
@@ -105,8 +178,18 @@ const getBookById = async (bookId) => {
     if (!book) {
       throw new ApiError(404, "Book not found");
     }
+
+    if (!book.isActive) {
+      throw new ApiError(400, "This book is not available");
+    }
+
     const bookInfo = await book.getFullInfo();
-    return bookInfo;
+    const stats = await getBookStats(bookId);
+
+    return {
+      ...bookInfo,
+      ...stats,
+    };
   } catch (error) {
     console.error("Error finding book by ID:", error);
     throw new Error("Failed to find book by ID");
@@ -122,6 +205,15 @@ const getBookById = async (bookId) => {
  */
 const updateBookById = async (bookId, updateData, coverFile) => {
   try {
+    const book = await Book.findOne({ bookId });
+    if (!book) {
+      throw new ApiError(404, "Book not found");
+    }
+
+    if (!book.isActive) {
+      throw new ApiError(400, "This book is not available for update");
+    }
+
     if (coverFile) {
       // Upload new cover file if provided
       const fileExt = coverFile.originalname.split(".").pop();
@@ -135,8 +227,7 @@ const updateBookById = async (bookId, updateData, coverFile) => {
       updateData.coverUrl = publicUrl;
 
       // Optionally delete old cover file if it exists
-      const book = await Book.findOne({ bookId });
-      if (book && book.coverUrl) {
+      if (book.coverUrl) {
         const oldFileName = book.coverUrl.split("/").pop();
         await deleteFileFromSupabase("book-covers", oldFileName);
       }

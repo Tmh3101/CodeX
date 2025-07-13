@@ -28,6 +28,7 @@ const bookSchema = new mongoose.Schema(
     quantity: { type: Number, required: true }, // book quantity
     publishedYear: { type: Number, required: true },
     publisher: { type: String, ref: "Publisher", required: true }, // publisher ID
+    isActive: { type: Boolean, default: true }, // book status
     coverUrl: { type: String }, // URL of the book cover image
   },
   {

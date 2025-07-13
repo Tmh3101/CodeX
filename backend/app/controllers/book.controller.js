@@ -54,7 +54,11 @@ const createBook = async (req, res, next) => {
  */
 const getAllBooks = async (req, res, next) => {
   try {
-    const response = await bookService.getAllBooks();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const response = await bookService.getAllBooks(skip, limit);
     return res.status(200).json({
       message: "Books retrieved successfully",
       data: response,
