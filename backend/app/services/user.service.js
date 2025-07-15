@@ -123,11 +123,41 @@ const getUserById = async (userID) => {
 };
 
 /**
+ * Get current user profile
+ * This is used when the user requests their own profile
+ * @param {string} userID - ID of the current user
+ * @param {string} role - role of the user (staff or reader)
+ * @returns {Promise<Object>} - current user profile info
+ * @throws {Error} - if user not found or fetching fails
+ */
+const getCurrentUserProfile = async (userData) => {
+  try {
+    let user = null;
+    if (userData.role === Role.STAFF) {
+      user = await staffService.getStaffByUserId(userData._id);
+    } else {
+      user = await readerService.getReaderByUserId(userData._id);
+    }
+
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    const userInfo = await user.getUserInfo();
+    return userInfo;
+  } catch (error) {
+    console.error("Error fetching current user profile:", error);
+    throw new Error("Failed to fetch current user profile: " + error.message);
+  }
+};
+
+/**
  * Update a user in the local database and Supabase
  * Update local user info and sync with Supabase Auth
  * @param {string} userID - ID of the user to update
  * @param {Object} updateData - fields to update
  * @returns {Promise<Object>} - updated user info
+ * @throws {Error} - if user not found or update fails
  */
 const updateUser = async (userID, updateData) => {
   try {
@@ -441,6 +471,7 @@ module.exports = {
   createUser,
   getAllUsers,
   getUserById,
+  getCurrentUserProfile,
   updateUser,
   deleteUser,
   updateUserProfile,

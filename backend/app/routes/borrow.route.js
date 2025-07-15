@@ -11,11 +11,20 @@ const Role = require("../enums/role.enum");
 
 const router = express.Router(); // Express router instance
 
-router.route("").post(
-  authMiddleware,
-  authorize(Role.READER), // Allow both readers and staff to create borrows
-  borrowController.createBorrow
-);
+router
+  .route("")
+  .post(
+    authMiddleware,
+    authorize(Role.READER), // Allow both readers and staff to create borrows
+    borrowController.createBorrow
+  )
+  .get(
+    authMiddleware,
+    authorize(Role.STAFF), // Allow both readers and staff to view borrows
+    borrowController.getAllBorrows
+  );
+
+router.route("/:id").get(authMiddleware, borrowController.getBorrowById);
 
 router.route("/cancel/:id").post(
   authMiddleware,
@@ -33,6 +42,12 @@ router.route("/confirm-return/:id").post(
   authMiddleware,
   authorize(Role.STAFF), // Only staff can confirm returns
   borrowController.confirmBorrowReturn
+);
+
+router.route("/my-borrows").get(
+  authMiddleware,
+  authorize(Role.READER), // Allow readers to view their own borrows
+  borrowController.getMyBorrows
 );
 
 module.exports = router;

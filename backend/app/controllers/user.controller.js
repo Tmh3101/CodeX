@@ -93,6 +93,30 @@ const getUserById = async (req, res, next) => {
 };
 
 /**
+ * Get current user profile
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next middleware function
+ * @return {import('express').Response} - JSON response with current user profile or error
+ * @throws {ApiError} - if an error occurs during fetching current user profile
+ */
+const getCurrentUserProfile = async (req, res, next) => {
+  const user = req.user; // Get the authenticated user from the request
+  try {
+    const response = await userService.getCurrentUserProfile(user);
+    return res.status(200).json({
+      message: "Current user profile retrieved successfully",
+      data: response,
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
+  }
+};
+
+/**
  * Controller function to handle user update request
  * @param {import('express').Request} req - Express request object
  * @param {import('express').Response} res - Express response object
@@ -268,6 +292,7 @@ module.exports = {
   createUser,
   getAllUsers,
   getUserById,
+  getCurrentUserProfile,
   updateUser,
   deleteUser,
   updateUserProfile,

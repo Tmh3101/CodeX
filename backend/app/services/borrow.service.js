@@ -3,11 +3,13 @@
  * This service handles borrow operations such as creating, updating, and retrieving borrow records.
  */
 
+const User = require("../models/user.model");
 const Borrow = require("../models/borrow.model");
 const Book = require("../models/book.model");
 const Reader = require("../models/reader.model");
 const Staff = require("../models/staff.model");
 const ApiError = require("../api-error");
+const Role = require("../enums/role.enum");
 const BorrowStatus = require("../enums/borrowStatus.enum");
 
 // Function to get number of avilable books for a borrow
@@ -212,9 +214,79 @@ const confirmBorrowReturn = async (userId, borrowId) => {
   }
 };
 
+/**
+ * Get all borrows
+ * @param {Object} filter - The filter criteria for retrieving borrows
+ * @param {Number} skip - Number of documents to skip for pagination
+ * @param {Number} limit - Number of documents to return
+ * @return {Promise<Array>} - An array of borrow documents
+ */
+const getAllBorrows = async (filter = {}, skip = 0, limit = 10) => {
+  try {
+    // Find borrows with pagination and filter
+    const borrows = await Borrow.find(filter).skip(skip).limit(limit);
+
+    return borrows.map((borrow) => borrow.getInfo());
+  } catch (error) {
+    console.error("Error getting all borrows:", error);
+    throw new Error("Failed to retrieve borrows: " + error.message);
+  }
+};
+
+/**
+ * Get my borrows
+ * @param {String} userId - The ID of the user to get borrows for
+ * @return {Promise<Array>} - An array of borrow documents
+ * @throws {Error} - If the borrow retrieval fails
+ */
+const getMyBorrows = async (userId, filter = {}) => {
+  try {
+    // Find borrows by readerId
+    const borrows = await Borrow.find({
+      readerId: userId,
+      ...filter,
+    });
+    return borrows.map((borrow) => borrow.getInfo());
+  } catch (error) {
+    console.error("Error getting my borrows:", error);
+    throw new Error("Failed to get my borrows: " + error.message);
+  }
+};
+
+/**
+ * Get borrow by ID
+ * @param {String} borrowId - The ID of the borrow to retrieve
+ * @return {Promise<Object>} - The borrow document
+ * @throws {Error} - If the borrow retrieval fails
+ */
+const getBorrowById = async (borrowId, userId) => {
+  try {
+    // Find borrow by ID
+    const borrow = await Borrow.findById(borrowId);
+    if (!borrow) {
+      throw new ApiError(404, "Borrow not found");
+    }
+
+    // Check if the user is authorized to view this borrow
+    const user = await User.findById(userId);
+    if (user.role === Role.READER && borrow.readerId !== user.readerId) {
+      throw new ApiError(403, "You are not authorized to view this borrow");
+    }
+
+    const borrowInfo = await borrow.getInfo();
+    return borrowInfo;
+  } catch (error) {
+    console.error("Error getting borrow by ID:", error);
+    throw new Error("Failed to retrieve borrow: " + error.message);
+  }
+};
+
 module.exports = {
   createBorrow,
   cancelBorrow,
   approveBorrow,
   confirmBorrowReturn,
+  getAllBorrows,
+  getMyBorrows,
+  getBorrowById,
 };

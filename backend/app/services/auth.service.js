@@ -116,8 +116,33 @@ const signIn = async (signInData) => {
   };
 };
 
+/**
+ * Reset password service to send a password reset email
+ * This function sends a password reset email to the user
+ * @param {string} email - User's email address
+ * @returns {Promise<void>} - Returns nothing if successful
+ * @throws {ApiError} - If the user is not found or email sending fails
+ */
+const resetPassword = async (email) => {
+  // Check if the user exists
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new ApiError(404, "Email is not registered");
+  }
+  // Send password reset email using Supabase
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://example.com/update-password", // Replace with your actual redirect URL (frontend URL)
+  });
+
+  if (error) {
+    console.error("Supabase reset password error:", error);
+    throw new ApiError(400, "Failed to send password reset email");
+  }
+};
+
 module.exports = {
   signUp,
   verifyEmailCallback,
   signIn,
+  resetPassword,
 };

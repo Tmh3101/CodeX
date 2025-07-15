@@ -37,6 +37,9 @@ router
  * These routes allow users to update their own profile
  */
 
+// Get current user profile
+router.get("/me", userController.getCurrentUserProfile);
+
 // Update user profile
 router.put("/me/update-profile", userController.updateUserProfile);
 

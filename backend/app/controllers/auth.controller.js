@@ -89,8 +89,36 @@ const signIn = async (req, res, next) => {
   }
 };
 
+/**
+ * Controller function to handle password reset requests
+ * @param {import('express').Request} req - Express request object
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next middleware function
+ * @returns {Promise<void>}
+ */
+const resetPassword = async (req, res, next) => {
+  // Check if request body is empty
+  if (!req.body) {
+    return next(new ApiError(400, "Content can not be empty!"));
+  }
+
+  try {
+    const { email } = req.body;
+    await authService.resetPassword(email);
+    return res.status(200).json({
+      message: "Password reset email sent successfully",
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return next(error);
+    }
+    return next(new ApiError(500, error.message || "Internal server error"));
+  }
+};
+
 module.exports = {
   signUp,
   verifyEmailCallback,
   signIn,
+  resetPassword,
 };
