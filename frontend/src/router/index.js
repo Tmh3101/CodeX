@@ -28,6 +28,12 @@ const routes = [
     // Lazy-loaded component
     component: () => import("../views/MyBorrowsPage.vue"),
   },
+  {
+    path: "/profile",
+    name: "Profile",
+    // Lazy-loaded component
+    component: () => import("../views/ProfilePage.vue"),
+  },
 ];
 
 const router = createRouter({
