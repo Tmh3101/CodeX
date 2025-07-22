@@ -44,7 +44,7 @@ router.route("/confirm-return/:id").post(
   borrowController.confirmBorrowReturn
 );
 
-router.route("/my-borrows").get(
+router.route("/my-borrows/all").get(
   authMiddleware,
   authorize(Role.READER), // Allow readers to view their own borrows
   borrowController.getMyBorrows

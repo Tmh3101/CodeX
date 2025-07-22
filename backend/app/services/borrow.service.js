@@ -241,12 +241,23 @@ const getAllBorrows = async (filter = {}, skip = 0, limit = 10) => {
  */
 const getMyBorrows = async (userId, filter = {}) => {
   try {
+    // Get reader by userId
+    const reader = await Reader.findById(userId);
+
     // Find borrows by readerId
     const borrows = await Borrow.find({
-      readerId: userId,
+      readerId: reader.readerId,
       ...filter,
     });
-    return borrows.map((borrow) => borrow.getInfo());
+
+    const borrowInfo = await Promise.all(
+      borrows.map(async (borrow) => {
+        const borrowDetails = await borrow.getInfo();
+        return borrowDetails;
+      })
+    );
+
+    return borrowInfo;
   } catch (error) {
     console.error("Error getting my borrows:", error);
     throw new Error("Failed to get my borrows: " + error.message);

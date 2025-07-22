@@ -41,27 +41,6 @@ const signUp = async (req, res, next) => {
 };
 
 /**
- * Controller function to handle email verification callback
- * @param {import('express').Request} req - Express request object
- * @param {import('express').Response} res - Express response object
- * @param {import('express').NextFunction} next - Express next middleware function
- * @returns {Promise<void>}
- */
-const verifyEmailCallback = async (req, res, next) => {
-  try {
-    await authService.verifyEmailCallback(req.user._id);
-    return res.status(200).json({
-      message: "Email verified successfully",
-    });
-  } catch (error) {
-    if (error instanceof ApiError) {
-      return next(error);
-    }
-    return next(new ApiError(500, error.message || "Internal server error"));
-  }
-};
-
-/**
  * Controller function to handle user sign in requests
  * @param {import('express').Request} req - Express request object
  * @param {import('express').Response} res - Express response object
@@ -118,7 +97,6 @@ const resetPassword = async (req, res, next) => {
 
 module.exports = {
   signUp,
-  verifyEmailCallback,
   signIn,
   resetPassword,
 };

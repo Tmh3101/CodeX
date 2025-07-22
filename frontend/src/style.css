@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-white font-sans text-text-dark;
+}
+
+.btn {
+  @apply px-4 py-2 rounded-md transition duration-300 ease-in-out focus:outline-none;
+}
+
+.btn-primary {
+  @apply bg-primary text-white hover:bg-primary-hover;
+}
+
+.btn-secondary {
+  @apply border border-primary text-primary hover:bg-primary hover:text-white;
+}
+
+.container-custom {
+  @apply container mx-auto px-4 md:px-6;
+}

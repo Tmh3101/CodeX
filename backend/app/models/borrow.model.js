@@ -44,7 +44,10 @@ const borrowSchema = new mongoose.Schema(
 
 borrowSchema.methods.getInfo = async function () {
   const reader = await Reader.findOne({ readerId: this.readerId });
+
   const book = await Book.findOne({ bookId: this.bookId });
+  const bookInfo = await book.getFullInfo();
+
   const approveStaff = this.approveStaffId
     ? await Staff.findOne({ staffId: this.staffId })
     : null;
@@ -56,10 +59,9 @@ borrowSchema.methods.getInfo = async function () {
   const data = this.toObject();
 
   data.reader = reader;
-  data.book = book;
+  data.book = bookInfo;
   data.approvedStaff = approveStaff;
   data.returnedStaff = returnStaff;
-
   delete data.readerId;
   delete data.bookId;
   delete data.approvedStaffId;

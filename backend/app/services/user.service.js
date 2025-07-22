@@ -10,6 +10,7 @@ const Role = require("../enums/role.enum");
 const ApiError = require("../api-error");
 const User = require("../models/user.model");
 const Staff = require("../models/staff.model");
+const Reader = require("../models/reader.model");
 const {
   convertToSupabaseUser,
   convertToUser,
@@ -134,9 +135,9 @@ const getCurrentUserProfile = async (userData) => {
   try {
     let user = null;
     if (userData.role === Role.STAFF) {
-      user = await staffService.getStaffByUserId(userData._id);
+      user = await Staff.findById(userData._id);
     } else {
-      user = await readerService.getReaderByUserId(userData._id);
+      user = await Reader.findById(userData._id);
     }
 
     if (!user) {

@@ -15,7 +15,7 @@ const getNextReaderId = async () => {
 
     const lastId = parseInt(lastReader.readerId.replace("DG", ""), 10);
     const nextId = lastId + 1;
-    return `NV${String(nextId).padStart(3, "0")}`; // e.g. DG002, DG003, etc.
+    return `DG${nextId.toString().padStart(3, "0")}`;
   } catch (error) {
     console.error("Error getting next reader ID:", error);
     throw new Error("Failed to generate next reader ID");

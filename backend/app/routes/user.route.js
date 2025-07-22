@@ -38,7 +38,7 @@ router
  */
 
 // Get current user profile
-router.get("/me", userController.getCurrentUserProfile);
+router.get("/me/profile", userController.getCurrentUserProfile);
 
 // Update user profile
 router.put("/me/update-profile", userController.updateUserProfile);

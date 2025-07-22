@@ -58,7 +58,15 @@ const getAllBooks = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const response = await bookService.getAllBooks(skip, limit);
+    const search = req.query.search || "";
+    const categoryId = req.query.categoryId || "";
+
+    const response = await bookService.getAllBooks(
+      skip,
+      limit,
+      search,
+      categoryId
+    );
     return res.status(200).json({
       message: "Books retrieved successfully",
       data: response,

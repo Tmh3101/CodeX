@@ -130,13 +130,26 @@ const createBook = async (bookData, coverFile) => {
  * Get all books from the database
  * @param {Number} skip - Number of documents to skip for pagination
  * @param {Number} limit - Maximum number of documents to return
+ * @param {String} search - Search query for book title
+ * @param {String} categoryId - Category filter for books
  * @return {Promise<Array>} - An array of book documents
  * @throws {ApiError} - If the retrieval fails
  */
-const getAllBooks = async (skip = 0, limit = 10) => {
+const getAllBooks = async (
+  skip = 0,
+  limit = 10,
+  search = "",
+  categoryId = ""
+) => {
   try {
     // get all active books with pagination
-    const books = await Book.find({ isActive: true }).skip(skip).limit(limit);
+    const books = await Book.find({
+      isActive: true,
+      title: { $regex: search.trim(), $options: "i" }, // case-insensitive search
+      ...(categoryId && { categories: categoryId }), // filter by category if provided
+    })
+      .skip(search ? 0 : skip)
+      .limit(limit);
 
     const bookFullInfo = await Promise.all(
       books.map((book) => {
@@ -151,7 +164,11 @@ const getAllBooks = async (skip = 0, limit = 10) => {
       })
     );
 
-    const total = await Book.countDocuments();
+    const total = await Book.countDocuments({
+      isActive: true,
+      title: { $regex: search.trim(), $options: "i" },
+      ...(categoryId && { categories: categoryId }),
+    });
 
     return {
       totalBooks: total,
@@ -159,6 +176,7 @@ const getAllBooks = async (skip = 0, limit = 10) => {
       limit,
       currentPage: Math.ceil(skip / limit) + 1,
       books: bookFullInfo,
+      skip,
     };
   } catch (error) {
     console.error("Error getting all books:", error);

@@ -65,25 +65,6 @@ const signUp = async (signUpData) => {
   }
 };
 
-/** * Callback function to verify email after sign up
- * This function updates the user's email verification status in the local database
- * @param {string} userID - JWT token containing user ID (sub)
- */
-const verifyEmailCallback = async (userID) => {
-  try {
-    // Check if the user exists in the local database
-    const existingUser = await User.findById(userID);
-    if (!existingUser) {
-      throw new ApiError(404, "User not found");
-    }
-
-    // Update the user's email verification status in the local database
-    await User.findByIdAndUpdate(userID, { emailVerified: true });
-  } catch (err) {
-    throw new Error(`Email verification failed: ${err.message}`);
-  }
-};
-
 /** * Sign in service to authenticate a user
  * This function checks the user's credentials and returns access and refresh tokens
  * @param {Object} signInData - User sign in data containing email and password
@@ -95,7 +76,6 @@ const signIn = async (signInData) => {
   // Check if the user exists and is active
   const user = await User.findOne({ email });
   if (!user) throw new ApiError(404, "Email is not registered");
-  if (!user.emailVerified) throw new ApiError(403, "Email is not verified");
   if (!user.isActive) throw new ApiError(403, "Account is not active");
 
   // Authenticate the user with Supabase
@@ -106,7 +86,16 @@ const signIn = async (signInData) => {
 
   if (error) {
     console.error("Supabase sign in error:", error);
+    if (!user.emailVerified) {
+      throw new ApiError(403, "Email is not verified");
+    }
     throw new ApiError(400, "Password is incorrect");
+  }
+
+  // If login is successful, update the user's email verification status
+  if (!user.emailVerified) {
+    user.emailVerified = true;
+    await user.save();
   }
 
   // Return access token and refresh token from the Supabase session
@@ -142,7 +131,6 @@ const resetPassword = async (email) => {
 
 module.exports = {
   signUp,
-  verifyEmailCallback,
   signIn,
   resetPassword,
 };
