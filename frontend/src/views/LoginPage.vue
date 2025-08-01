@@ -138,13 +138,13 @@
 
 <script setup>
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 import AppFooter from "../components/AppFooter.vue";
 import { useAuthStore } from "@/stores/auth";
+import { useRouter } from "vue-router";
 
 const auth = useAuthStore();
-
 const router = useRouter();
+
 const email = ref("");
 const password = ref("");
 const rememberMe = ref(false);
@@ -161,8 +161,12 @@ const handleLogin = async () => {
   error.value = "";
 
   try {
-    await auth.login(email.value, password.value);
-    router.push("/");
+    const redirectPath = await auth.login(email.value, password.value);
+    if (redirectPath) {
+      router.push(redirectPath);
+    } else {
+      router.push("/");
+    }
   } catch (err) {
     console.error("Login error:", err);
     error.value = err || "An error occurred during login. Please try again.";

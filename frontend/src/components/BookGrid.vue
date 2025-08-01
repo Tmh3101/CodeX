@@ -195,7 +195,7 @@ const fetchBooks = async () => {
       }
     });
 
-    const response = await bookService.getAllBooks(params);
+    const response = await bookService.getAll(params);
 
     books.value = response.data.books || [];
     pagination.value = {

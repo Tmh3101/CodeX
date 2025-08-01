@@ -13,7 +13,7 @@
         <!-- Authenticated user menu -->
         <template v-if="isAuthenticated">
           <router-link
-            to="/borrows"
+            to="/my-borrows"
             class="text-text-dark hover:text-primary hover:underline font-medium"
           >
             Sách mượn

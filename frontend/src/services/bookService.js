@@ -9,7 +9,7 @@ export const bookService = {
    * @param {Object} params - Query parameters (page, limit, search, category, etc.)
    * @returns {Promise} - Promise chứa danh sách sách
    */
-  getAllBooks: async (params = {}) => {
+  getAll: async (params = {}) => {
     try {
       const response = await api.get("/books", { params });
       return response.data;
@@ -24,7 +24,7 @@ export const bookService = {
    * @param {string} bookId - ID của cuốn sách
    * @returns {Promise} - Promise chứa thông tin sách
    */
-  getBookById: async (bookId) => {
+  getById: async (bookId) => {
     try {
       const response = await api.get(`/books/${bookId}`);
       return response.data;
@@ -39,7 +39,7 @@ export const bookService = {
    * @param {Object} bookData - Dữ liệu sách mới
    * @returns {Promise} - Promise chứa thông tin sách đã tạo
    */
-  createBook: async (bookData) => {
+  create: async (bookData) => {
     try {
       const response = await api.post("/books", bookData);
       return response.data;
@@ -55,7 +55,7 @@ export const bookService = {
    * @param {Object} bookData - Dữ liệu cập nhật
    * @returns {Promise} - Promise chứa thông tin sách đã cập nhật
    */
-  updateBook: async (bookId, bookData) => {
+  update: async (bookId, bookData) => {
     try {
       const response = await api.put(`/books/${bookId}`, bookData);
       return response.data;
@@ -70,7 +70,7 @@ export const bookService = {
    * @param {string} bookId - ID của cuốn sách
    * @returns {Promise} - Promise xác nhận xóa
    */
-  deleteBook: async (bookId) => {
+  delete: async (bookId) => {
     try {
       const response = await api.delete(`/books/${bookId}`);
       return response.data;
@@ -86,7 +86,7 @@ export const bookService = {
    * @param {Object} filters - Bộ lọc (category, author, publisher, etc.)
    * @returns {Promise} - Promise chứa kết quả tìm kiếm
    */
-  searchBooks: async (query, filters = {}) => {
+  search: async (query, filters = {}) => {
     try {
       const params = {
         search: query,
@@ -106,7 +106,7 @@ export const bookService = {
    * @param {Object} params - Query parameters
    * @returns {Promise} - Promise chứa danh sách sách trong category
    */
-  getBooksByCategory: async (categoryId, params = {}) => {
+  getByCategory: async (categoryId, params = {}) => {
     try {
       const response = await api.get(`/books/category/${categoryId}`, {
         params,

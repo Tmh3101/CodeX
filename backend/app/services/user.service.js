@@ -131,20 +131,21 @@ const getUserById = async (userID) => {
  * @returns {Promise<Object>} - current user profile info
  * @throws {Error} - if user not found or fetching fails
  */
-const getCurrentUserProfile = async (userData) => {
+const getCurrentUserProfile = async (userId) => {
   try {
-    let user = null;
-    if (userData.role === Role.STAFF) {
-      user = await Staff.findById(userData._id);
-    } else {
-      user = await Reader.findById(userData._id);
-    }
-
+    const user = await User.findById(userId);
     if (!user) {
       throw new ApiError(404, "User not found");
     }
 
-    const userInfo = await user.getUserInfo();
+    let userData = null;
+    if (user.role === Role.STAFF) {
+      userData = await Staff.findById(user._id);
+    } else {
+      userData = await Reader.findById(user._id);
+    }
+
+    const userInfo = await userData.getUserInfo();
     return userInfo;
   } catch (error) {
     console.error("Error fetching current user profile:", error);

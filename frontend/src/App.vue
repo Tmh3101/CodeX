@@ -10,6 +10,7 @@ const auth = useAuthStore();
 
 onMounted(() => {
   auth.initialize();
+  console.log("Auth info:", auth.user);
 });
 </script>
 

@@ -121,7 +121,7 @@
                     <span class="font-semibold text-yellow-800">Chờ duyệt</span>
                   </div>
                   <div class="text-2xl font-bold text-yellow-600">
-                    {{ book.totalPending || 0 }}
+                    {{ book.pendingQuantity || 0 }}
                   </div>
                 </div>
 
@@ -134,7 +134,7 @@
                     <span class="font-semibold text-red-800">Đã mượn</span>
                   </div>
                   <div class="text-2xl font-bold text-red-600">
-                    {{ book.totalApproved || 0 }}
+                    {{ book.approvedQuantity || 0 }}
                   </div>
                 </div>
               </div>
@@ -143,14 +143,175 @@
             <div class="flex flex-col sm:flex-row gap-4">
               <button
                 class="btn btn-primary flex-1 h-11"
-                :disabled="book.quantity <= 0"
-                :class="{ 'opacity-50 cursor-not-allowed': book.quantity <= 0 }"
-                @click="borrowBook"
+                :disabled="book.availableQuantity <= 0"
+                :class="{
+                  'opacity-50 cursor-not-allowed': book.availableQuantity <= 0,
+                }"
+                @click="openBorrowModal"
               >
-                Đăng ký mượn
+                <span v-if="book.availableQuantity > 0">Đăng ký mượn</span>
+                <span v-else>Hết sách</span>
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Borrow Modal -->
+      <div
+        v-if="showBorrowModal"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+        @click="closeBorrowModal"
+      >
+        <div
+          class="bg-white rounded-lg max-w-md w-full p-6 relative"
+          @click.stop
+        >
+          <!-- Modal Header -->
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-text-dark">Đăng ký mượn sách</h3>
+            <button
+              @click="closeBorrowModal"
+              class="text-gray-400 hover:text-gray-600 text-2xl"
+            >
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+
+          <!-- Book Info -->
+          <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+            <div class="flex items-start space-x-3">
+              <img
+                :src="book.coverUrl"
+                :alt="book.title"
+                class="w-16 h-20 object-cover rounded"
+              />
+              <div class="flex-1">
+                <h4 class="font-semibold text-sm mb-1">{{ book.title }}</h4>
+                <p class="text-xs text-gray-600 mb-2">
+                  {{ book.authors?.join(", ") }}
+                </p>
+                <p class="text-xs text-green-600 font-medium">
+                  Có sẵn: {{ book.availableQuantity }} cuốn
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Borrow Form -->
+          <form @submit.prevent="submitBorrowRequest" class="space-y-4">
+            <!-- Quantity -->
+            <div>
+              <label
+                for="quantity"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Số lượng mượn <span class="text-red-500">*</span>
+              </label>
+              <div class="flex items-center space-x-3">
+                <button
+                  type="button"
+                  @click="decreaseQuantity"
+                  :disabled="borrowForm.quantity <= 1"
+                  class="w-8 h-8 flex items-center justify-center rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <i class="pi pi-minus text-xs"></i>
+                </button>
+                <input
+                  id="quantity"
+                  v-model.number="borrowForm.quantity"
+                  type="number"
+                  :min="1"
+                  :max="book.availableQuantity"
+                  required
+                  class="w-20 text-center border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-primary focus:border-primary"
+                />
+                <button
+                  type="button"
+                  @click="increaseQuantity"
+                  :disabled="borrowForm.quantity >= book.availableQuantity"
+                  class="w-8 h-8 flex items-center justify-center rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <i class="pi pi-plus text-xs"></i>
+                </button>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">
+                Tối đa {{ book.availableQuantity }} cuốn
+              </p>
+            </div>
+
+            <!-- Note -->
+            <div>
+              <label
+                for="note"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Ghi chú (không bắt buộc)
+              </label>
+              <textarea
+                id="note"
+                v-model="borrowForm.note"
+                rows="3"
+                placeholder="Nhập ghi chú về yêu cầu mượn sách (tùy chọn)..."
+                class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-primary focus:border-primary resize-none"
+              ></textarea>
+            </div>
+
+            <!-- Error Message -->
+            <div
+              v-if="borrowError"
+              class="bg-red-50 border border-red-200 text-red-800 rounded-md p-3 text-sm"
+            >
+              {{ borrowError }}
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex space-x-3 pt-4">
+              <button
+                type="button"
+                @click="closeBorrowModal"
+                class="flex-1 btn btn-secondary"
+                :disabled="isSubmitting"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                class="flex-1 btn btn-primary"
+                :disabled="
+                  isSubmitting || borrowForm.quantity > book.availableQuantity
+                "
+              >
+                <span
+                  v-if="isSubmitting"
+                  class="flex items-center justify-center"
+                >
+                  <svg
+                    class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Đang xử lý...
+                </span>
+                <span v-else>Xác nhận mượn</span>
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -161,24 +322,38 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import AppHeader from "../components/AppHeader.vue";
 import AppFooter from "../components/AppFooter.vue";
-import { bookService } from "@/services";
+import { bookService, borrowService } from "@/services";
+import { useAuthStore } from "@/stores/auth";
 
 const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 const bookId = route.params.id;
 
 const book = ref({});
 const loading = ref(true);
 const error = ref(null);
 
+// Modal states
+const showBorrowModal = ref(false);
+const isSubmitting = ref(false);
+const borrowError = ref(null);
+
+// Borrow form data
+const borrowForm = ref({
+  quantity: 1,
+  note: "",
+});
+
 const fetchBookDetails = async () => {
   loading.value = true;
   error.value = null;
 
   try {
-    const response = await bookService.getBookById(bookId);
+    const response = await bookService.getById(bookId);
     book.value = response.data;
   } catch (err) {
     console.error("Error fetching book details:", err);
@@ -188,22 +363,114 @@ const fetchBookDetails = async () => {
   }
 };
 
-const borrowBook = async () => {
-  if (book.value.quantity <= 0) return;
+// Modal functions
+const openBorrowModal = () => {
+  if (!authStore.isAuthenticated) {
+    alert("Bạn cần đăng nhập để mượn sách.");
+    router.push("/login");
+    return;
+  }
 
-  try {
-    // This would be your API call to borrow the book
-    // await axios.post('/api/borrows', { bookId: book.value._id });
+  if (book.value.availableQuantity <= 0) return;
 
-    // For demo purposes, we'll just show an alert
-    alert(
-      `You have borrowed "${book.value.title}". You can find it in "My Borrows".`
-    );
-  } catch (error) {
-    console.error("Error borrowing book:", error);
-    alert("Failed to borrow the book. Please try again.");
+  // Reset form
+  borrowForm.value = {
+    quantity: 1,
+    note: "",
+  };
+  borrowError.value = null;
+  showBorrowModal.value = true;
+
+  // Prevent body scroll
+  document.body.style.overflow = "hidden";
+};
+
+const closeBorrowModal = () => {
+  showBorrowModal.value = false;
+  borrowError.value = null;
+
+  // Restore body scroll
+  document.body.style.overflow = "auto";
+};
+
+// Quantity controls
+const increaseQuantity = () => {
+  if (borrowForm.value.quantity < book.value.availableQuantity) {
+    borrowForm.value.quantity++;
   }
 };
 
-onMounted(fetchBookDetails);
+const decreaseQuantity = () => {
+  if (borrowForm.value.quantity > 1) {
+    borrowForm.value.quantity--;
+  }
+};
+
+// Submit borrow request
+const submitBorrowRequest = async () => {
+  if (isSubmitting.value) return;
+
+  borrowError.value = null;
+  isSubmitting.value = true;
+
+  try {
+    const borrowData = {
+      bookId: book.value.bookId || book.value._id,
+      quantity: borrowForm.value.quantity,
+      note: borrowForm.value.note.trim() || undefined,
+    };
+
+    await borrowService.borrowBook(borrowData);
+
+    // Close modal
+    closeBorrowModal();
+
+    // Show success message
+    alert(
+      `Đã gửi yêu cầu mượn sách "${book.value.title}" thành công! Bạn có thể theo dõi trạng thái trong "Sách mượn".`
+    );
+
+    // Redirect to my borrows page
+    router.push("/my-borrows");
+  } catch (err) {
+    console.error("Error borrowing book:", err);
+
+    // Extract error message from server response
+    let errorMessage = "Có lỗi xảy ra khi mượn sách. Vui lòng thử lại.";
+
+    if (err.response?.data?.message) {
+      errorMessage = err.response.data.message;
+    } else if (err.message) {
+      errorMessage = err.message;
+    }
+
+    borrowError.value = errorMessage;
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+// Legacy function for compatibility
+const borrowBook = () => {
+  openBorrowModal();
+};
+
+// Close modal on escape key
+const handleEscapeKey = (event) => {
+  if (event.key === "Escape" && showBorrowModal.value) {
+    closeBorrowModal();
+  }
+};
+
+onMounted(() => {
+  fetchBookDetails();
+  document.addEventListener("keydown", handleEscapeKey);
+});
+
+// Cleanup
+import { onUnmounted } from "vue";
+onUnmounted(() => {
+  document.removeEventListener("keydown", handleEscapeKey);
+  document.body.style.overflow = "auto";
+});
 </script>

@@ -19,8 +19,6 @@ const isTokenExpired = (token) => {
 // Helper function để xóa tất cả dữ liệu auth
 const clearAuthData = () => {
   localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  sessionStorage.removeItem("token");
 };
 
 // Tạo instance axios với cấu hình base
@@ -35,9 +33,8 @@ const api = axios.create({
 // Request interceptor - thêm token vào header nếu có
 api.interceptors.request.use(
   (config) => {
-    // Lấy token từ localStorage hoặc sessionStorage
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
+    // Lấy token từ localStorage
+    const token = localStorage.getItem("token");
 
     if (token) {
       // Kiểm tra token có hết hạn không trước khi gửi request

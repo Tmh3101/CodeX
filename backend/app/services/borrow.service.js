@@ -177,6 +177,45 @@ const approveBorrow = async (userId, borrowId) => {
 };
 
 /**
+ * Reject a borrow
+ * @param {String} userId - The ID of the user rejecting the borrow
+ * @param {String} borrowId - The ID of the borrow to reject
+ * @return {Promise<Object>} - The updated borrow document
+ * @throws {Error} - If the borrow rejection fails
+ */
+const rejectBorrow = async (userId, borrowId) => {
+  try {
+    // Find the borrow by ID
+    const borrow = await Borrow.findById(borrowId);
+    if (!borrow) {
+      throw new ApiError(404, "Borrow not found");
+    }
+
+    // Check if the user is a staff member
+    const staff = await Staff.findById(userId);
+    if (!staff) {
+      throw new ApiError(403, "You are not authorized to reject this borrow");
+    }
+
+    // Check if the borrow is already approved or cancelled
+    if (borrow.status !== BorrowStatus.PENDING) {
+      throw new ApiError(400, "This borrow cannot be rejected");
+    }
+
+    // Update the borrow status to REJECTED
+    borrow.status = BorrowStatus.REJECTED;
+    borrow.returnedStaffId = staff.staffId; // Set the staff who processed the rejection
+
+    const updatedBorrow = await borrow.save();
+
+    return updatedBorrow.getInfo();
+  } catch (error) {
+    console.error("Error rejecting borrow:", error);
+    throw new Error("Failed to reject borrow: " + error.message);
+  }
+};
+
+/**
  * Comfirm borrow returned
  * @param {String} borrowId - The ID of the borrow to confirm return
  * @return {Promise<Object>} - The updated borrow document
@@ -221,12 +260,77 @@ const confirmBorrowReturn = async (userId, borrowId) => {
  * @param {Number} limit - Number of documents to return
  * @return {Promise<Array>} - An array of borrow documents
  */
-const getAllBorrows = async (filter = {}, skip = 0, limit = 10) => {
+const getAllBorrows = async (filters, skip, limit) => {
   try {
+    // remove undefined properties from filters
+    Object.keys(filters).forEach((key) => {
+      if (filters[key] === undefined || filters[key] === null) {
+        delete filters[key];
+      }
+    });
     // Find borrows with pagination and filter
-    const borrows = await Borrow.find(filter).skip(skip).limit(limit);
+    const borrows = await Borrow.find(
+      filters.status ? { status: filters.status } : {}
+    )
+      .skip(skip)
+      .limit(limit);
 
-    return borrows.map((borrow) => borrow.getInfo());
+    let borrowInfo = await Promise.all(
+      borrows.map(async (borrow) => {
+        const borrowDetails = await borrow.getInfo();
+        borrowDetails.reader = await borrowDetails.reader.getUserInfo();
+        return borrowDetails;
+      })
+    );
+
+    // Apply search filter if provided
+    if (filters.search) {
+      borrowInfo = borrowInfo.filter(
+        (borrow) =>
+          borrow.reader.user.firstName
+            .toLowerCase()
+            .includes(filters.search.toLowerCase()) ||
+          borrow.reader.user.lastName
+            .toLowerCase()
+            .includes(filters.search.toLowerCase()) ||
+          borrow.book.title.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+
+    if (filters.fromDate || filters.toDate) {
+      const fromDate = filters.fromDate
+        ? new Date(filters.fromDate)
+        : new Date(0);
+      const toDate = filters.toDate ? new Date(filters.toDate) : new Date();
+
+      borrowInfo = borrowInfo.filter((borrow) => {
+        const borrowDate = new Date(borrow.borrowDate);
+        const returnDate = new Date(borrow.returnDate);
+        return (
+          (borrowDate >= fromDate && borrowDate <= toDate) ||
+          (returnDate >= fromDate && returnDate <= toDate)
+        );
+      });
+    }
+
+    const allBorrows = await Borrow.find();
+    const totalBorrows = allBorrows.length;
+    const totalPending = allBorrows.filter(
+      (b) => b.status === BorrowStatus.PENDING
+    ).length;
+    const totalApproved = allBorrows.filter(
+      (b) => b.status === BorrowStatus.APPROVED
+    ).length;
+
+    return {
+      totalPages: Math.ceil(totalBorrows / limit),
+      limit,
+      currentPage: Math.ceil(skip / limit) + 1,
+      totalBorrows: totalBorrows,
+      borrows: borrowInfo,
+      pendingQuantity: totalPending,
+      approvedQuantity: totalApproved,
+    };
   } catch (error) {
     console.error("Error getting all borrows:", error);
     throw new Error("Failed to retrieve borrows: " + error.message);
@@ -236,6 +340,8 @@ const getAllBorrows = async (filter = {}, skip = 0, limit = 10) => {
 /**
  * Get my borrows
  * @param {String} userId - The ID of the user to get borrows for
+ * @param {Object} filter - The filter criteria for retrieving borrows
+ *
  * @return {Promise<Array>} - An array of borrow documents
  * @throws {Error} - If the borrow retrieval fails
  */
@@ -270,7 +376,7 @@ const getMyBorrows = async (userId, filter = {}) => {
  * @return {Promise<Object>} - The borrow document
  * @throws {Error} - If the borrow retrieval fails
  */
-const getBorrowById = async (borrowId, userId) => {
+const getBorrowById = async (borrowId) => {
   try {
     // Find borrow by ID
     const borrow = await Borrow.findById(borrowId);
@@ -278,13 +384,8 @@ const getBorrowById = async (borrowId, userId) => {
       throw new ApiError(404, "Borrow not found");
     }
 
-    // Check if the user is authorized to view this borrow
-    const user = await User.findById(userId);
-    if (user.role === Role.READER && borrow.readerId !== user.readerId) {
-      throw new ApiError(403, "You are not authorized to view this borrow");
-    }
-
     const borrowInfo = await borrow.getInfo();
+    borrowInfo.reader = await borrowInfo.reader.getUserInfo();
     return borrowInfo;
   } catch (error) {
     console.error("Error getting borrow by ID:", error);
@@ -296,6 +397,7 @@ module.exports = {
   createBorrow,
   cancelBorrow,
   approveBorrow,
+  rejectBorrow,
   confirmBorrowReturn,
   getAllBorrows,
   getMyBorrows,

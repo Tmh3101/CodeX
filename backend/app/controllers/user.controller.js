@@ -103,7 +103,7 @@ const getUserById = async (req, res, next) => {
 const getCurrentUserProfile = async (req, res, next) => {
   const user = req.user; // Get the authenticated user from the request
   try {
-    const response = await userService.getCurrentUserProfile(user);
+    const response = await userService.getCurrentUserProfile(user._id);
     return res.status(200).json({
       message: "Current user profile retrieved successfully",
       data: response,

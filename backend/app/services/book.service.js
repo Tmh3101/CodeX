@@ -6,6 +6,8 @@
 
 const ApiError = require("../api-error");
 const Book = require("../models/book.model");
+const Borrows = require("../models/borrow.model");
+const BorrowStatus = require("../enums/borrowStatus.enum");
 const {
   uploadFileToSupabase,
   getPublicUrl,
@@ -31,48 +33,18 @@ const getNextBookId = async () => {
 // Get number of pending borrows, approved borrows and available books by bookId
 const getBookStats = async (bookId) => {
   try {
-    const stats = await Book.aggregate([
-      { $match: { bookId: bookId } },
-      {
-        $lookup: {
-          from: "borrows",
-          localField: "bookId",
-          foreignField: "bookId",
-          as: "borrows",
-        },
-      },
-      {
-        $project: {
-          totalPending: {
-            $size: {
-              $filter: {
-                input: "$borrows",
-                as: "borrow",
-                cond: { $eq: ["$$borrow.status", "PENDING"] },
-              },
-            },
-          },
-          totalApproved: {
-            $size: {
-              $filter: {
-                input: "$borrows",
-                as: "borrow",
-                cond: { $eq: ["$$borrow.status", "APPROVED"] },
-              },
-            },
-          },
-          availableQuantity: "$quantity",
-        },
-      },
-    ]);
+    const borrows = await Borrows.find({ bookId: bookId });
 
-    return (
-      stats[0] || {
-        pendingQuatity: 0,
-        approvedQuatity: 0,
-        availableQuantity: 0,
-      }
+    const stats = borrows.reduce(
+      (acc, borrow) => {
+        if (borrow.status === BorrowStatus.PENDING) acc.pendingQuantity++;
+        if (borrow.status === BorrowStatus.APPROVED) acc.approvedQuantity++;
+        return acc;
+      },
+      { pendingQuantity: 0, approvedQuantity: 0 }
     );
+
+    return stats;
   } catch (error) {
     console.error("Error getting book stats:", error);
     throw new Error("Failed to retrieve book stats");
@@ -158,6 +130,8 @@ const getAllBooks = async (
             return {
               ...info,
               ...stats,
+              availableQuantity:
+                info.quantity - stats.pendingQuantity - stats.approvedQuantity,
             };
           });
         });
@@ -207,6 +181,8 @@ const getBookById = async (bookId) => {
     return {
       ...bookInfo,
       ...stats,
+      availableQuantity:
+        bookInfo.quantity - stats.pendingQuantity - stats.approvedQuantity,
     };
   } catch (error) {
     console.error("Error finding book by ID:", error);

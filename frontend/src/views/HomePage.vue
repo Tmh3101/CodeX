@@ -17,6 +17,15 @@ import HeroSection from "../components/HeroSection.vue";
 import SearchFilters from "../components/SearchFilters.vue";
 import BookGrid from "../components/BookGrid.vue";
 import AppFooter from "../components/AppFooter.vue";
+import { useAuthStore } from "@/stores/auth";
+import { useRouter } from "vue-router";
+
+const auth = useAuthStore();
+const router = useRouter();
+
+if (auth.isStaff) {
+  router.push(auth.getRedirectPath());
+}
 
 const searchParams = ref({
   search: "",

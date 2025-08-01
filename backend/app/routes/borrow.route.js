@@ -24,7 +24,11 @@ router
     borrowController.getAllBorrows
   );
 
-router.route("/:id").get(authMiddleware, borrowController.getBorrowById);
+router.route("/:id").get(
+  authMiddleware,
+  authorize(Role.STAFF), // Allow staff to view a specific borrow
+  borrowController.getBorrowById
+);
 
 router.route("/cancel/:id").post(
   authMiddleware,
@@ -42,6 +46,12 @@ router.route("/confirm-return/:id").post(
   authMiddleware,
   authorize(Role.STAFF), // Only staff can confirm returns
   borrowController.confirmBorrowReturn
+);
+
+router.route("/reject/:id").post(
+  authMiddleware,
+  authorize(Role.STAFF), // Only staff can reject borrows
+  borrowController.rejectBorrow
 );
 
 router.route("/my-borrows/all").get(

@@ -4,3 +4,4 @@ export { bookService } from "./bookService.js";
 export { categoryService } from "./categoryService.js";
 export { authService } from "./authService.js";
 export { userService } from "./userService.js";
+export { borrowService } from "./borrowService.js";

@@ -2,159 +2,178 @@
   <div>
     <AppHeader />
 
-    <div class="container-custom py-12">
+    <div class="container-custom py-12 min-h-[550px]">
       <h1 class="text-3xl font-bold mb-6 text-center">Sách mượn của tôi</h1>
-
-      <div v-if="loading" class="flex justify-center py-10">
-        <div
-          class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
-        ></div>
-      </div>
-
-      <!-- Tabs -->
-      <div v-else class="mb-6">
-        <div class="flex border-b">
-          <button
-            v-for="tab in tabs"
-            :key="tab.id"
-            class="py-2 px-4 font-medium text-sm focus:outline-none"
-            :class="
-              activeTab === tab.id
-                ? 'border-b-2 border-primary text-primary'
-                : 'text-gray-500 hover:text-gray-700'
-            "
-            @click="activeTab = tab.id"
-          >
-            {{ tab.name }}
-            <span
-              v-if="getFilteredBorrows(tab.id).length"
-              class="ml-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs"
-            >
-              {{ getFilteredBorrows(tab.id).length }}
-            </span>
-          </button>
+      <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <div v-if="loading" class="flex justify-center py-10">
+          <div
+            class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+          ></div>
         </div>
-      </div>
 
-      <div
-        v-if="getFilteredBorrows(activeTab).length === 0"
-        class="text-center py-16 bg-white rounded-lg shadow-sm"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-16 w-16 text-gray-400 mx-auto mb-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-          />
-        </svg>
-        <h2 class="text-xl font-semibold mb-2">
-          Không có sách trong danh mục này
-        </h2>
-        <p class="text-gray-600 mb-6">
-          {{ getEmptyMessage(activeTab) }}
-        </p>
-        <router-link to="/" class="btn btn-primary"> Duyệt sách </router-link>
-      </div>
-
-      <div v-else class="bg-white rounded-lg shadow-sm overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Sách
-              </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Ngày mượn
-              </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Ngày trả
-              </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Trạng thái
-              </th>
-              <th
-                v-if="activeTab !== 'returned'"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Hành động
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr
-              v-for="borrow in getFilteredBorrows(activeTab)"
-              :key="borrow._id"
+        <!-- Tabs -->
+        <div v-else class="mb-6">
+          <div class="flex border-b">
+            <button
+              v-for="tab in tabs"
+              :key="tab.id"
+              class="py-2 px-4 font-medium text-sm focus:outline-none"
+              :class="
+                activeTab === tab.id
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-gray-500 hover:text-gray-700'
+              "
+              @click="activeTab = tab.id"
             >
-              <td class="px-6 py-4">
-                <div class="flex items-center">
-                  <div class="flex-shrink-0 h-10 w-10">
-                    <img
-                      class="h-10 w-10 rounded"
-                      :src="
-                        borrow.book.coverUrl ||
-                        'https://via.placeholder.com/40x40?text=Book'
-                      "
-                      :alt="borrow.book.title"
-                    />
-                  </div>
-                  <div class="ml-4">
-                    <div class="font-medium text-gray-900 hover:text-primary">
-                      <router-link :to="`/books/${borrow.book.bookId}`">
-                        {{ borrow.book.title }}
-                      </router-link>
-                    </div>
-                    <div class="text-sm text-gray-500">
-                      {{
-                        borrow.book.authors.length
-                          ? borrow.book.authors.join(", ")
-                          : "Unknown"
-                      }}
-                    </div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-500">
-                {{ formatDate(borrow.borrowDate) }}
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-500">
-                {{ formatDate(borrow.returnDate) }}
-              </td>
-              <td class="px-6 py-4 text-sm">
-                <span
-                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                  :class="getStatusClass(borrow.status)"
+              {{ tab.name }}
+              <span
+                v-if="getFilteredBorrows(tab.id).length"
+                class="ml-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs"
+              >
+                {{ getFilteredBorrows(tab.id).length }}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div
+          v-if="getFilteredBorrows(activeTab).length === 0"
+          class="text-center py-16 bg-white rounded-lg shadow-sm"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-16 w-16 text-gray-400 mx-auto mb-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
+          </svg>
+          <h2 class="text-xl font-semibold mb-2">
+            Không có sách trong danh mục này
+          </h2>
+          <p class="text-gray-600 mb-6">
+            {{ getEmptyMessage(activeTab) }}
+          </p>
+          <router-link to="/" class="btn btn-primary">
+            Trở về trang chủ
+          </router-link>
+        </div>
+
+        <div v-else class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  {{ borrow.status }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-sm">
-                <button
-                  v-if="borrow.status === 'Borrowed'"
-                  class="text-primary hover:text-primary-hover font-medium"
-                  @click="returnBook(borrow._id)"
+                  Sách
+                </th>
+
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Return
-                </button>
-                <span v-else class="text-gray-400">-</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                  Số lượng
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Ngày mượn
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Ngày trả
+                </th>
+                <th
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Trạng thái
+                </th>
+                <th
+                  v-if="activeTab !== 'returned'"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Hành động
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr
+                v-for="borrow in getFilteredBorrows(activeTab)"
+                :key="borrow._id"
+              >
+                <td class="px-6 py-4">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10">
+                      <img
+                        class="h-10 w-10 rounded"
+                        :src="
+                          borrow.book.coverUrl ||
+                          'https://via.placeholder.com/40x40?text=Book'
+                        "
+                        :alt="borrow.book.title"
+                      />
+                    </div>
+                    <div class="ml-4">
+                      <div class="font-medium text-gray-900 hover:text-primary">
+                        <router-link :to="`/books/${borrow.book.bookId}`">
+                          {{ borrow.book.title }}
+                        </router-link>
+                      </div>
+                      <div class="text-sm text-gray-500">
+                        {{
+                          borrow.book.authors.length
+                            ? borrow.book.authors.join(", ")
+                            : "Unknown"
+                        }}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">
+                  {{ borrow.quantity }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">
+                  {{ formatDate(borrow.borrowDate) }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">
+                  {{ formatDate(borrow.returnDate) }}
+                </td>
+                <td class="px-6 py-4 text-sm">
+                  <span
+                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                    :class="getStatusClass(borrow.status)"
+                  >
+                    {{ tabs.find((t) => t.id === borrow.status).name }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-sm">
+                  <button
+                    v-if="borrow.status === 'borrowed'"
+                    class="text-primary hover:text-primary-hover font-medium"
+                    @click="returnBook(borrow._id)"
+                  >
+                    Trả sách
+                  </button>
+                  <button
+                    v-else-if="borrow.status === 'pending'"
+                    class="text-white bg-primary hover:bg-red-700 font-medium px-3 py-1 rounded"
+                    @click="cancelBorrow(borrow._id)"
+                  >
+                    Hủy
+                  </button>
+                  <span v-else class="text-gray-400">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -174,7 +193,7 @@ const activeTab = ref("active");
 
 const tabs = [
   { id: "pending", name: "Đang chờ duyệt" },
-  { id: "approved", name: "Đã mượn" },
+  { id: "approved", name: "Đang mượn" },
   { id: "returned", name: "Đã trả" },
 ];
 
@@ -183,6 +202,8 @@ onMounted(async () => {
     // In a real app, fetch borrows from API
     const myBorrows = await borrowService.getUserBorrows();
     borrows.value = myBorrows.data || [];
+
+    console.log("Fetched borrows:", borrows.value);
   } catch (error) {
     console.error("Error fetching borrows:", error);
   } finally {
@@ -206,13 +227,13 @@ const getFilteredBorrows = (tabId) => {
 const getEmptyMessage = (tabId) => {
   switch (tabId) {
     case "pending":
-      return "You don't have any pending borrowed books at the moment.";
+      return "Bạn không có sách nào đang chờ duyệt.";
     case "approved":
-      return "You don't have any approved borrowed books at the moment.";
+      return "Bạn không có sách nào đã được duyệt.";
     case "returned":
-      return "You haven't returned any books yet.";
+      return "Bạn chưa trả sách nào.";
     default:
-      return "No books found in this category.";
+      return "Không tìm thấy sách nào trong danh mục này.";
   }
 };
 
