@@ -87,16 +87,35 @@ const createUser = async (userData) => {
  * @returns {Promise<Array>} - list of all users
  * @throws {Error} - if fetching users fails
  */
-const getAllUsers = async (skip = 0, limit = 10) => {
+const getAllUsers = async (filter = {}, skip = 0, limit = 10) => {
   try {
-    const total = await User.countDocuments({});
-    const users = await User.find().skip(skip).limit(limit);
+    const total = await User.countDocuments(filter);
+    const users = await User.find(filter).skip(skip).limit(limit);
+
+    const userData = await Promise.all(
+      users.map(async (user) => {
+        if (user.role === Role.STAFF) {
+          const staff = await Staff.findById(user._id);
+          return {
+            ...user.toObject(),
+            staffId: staff.staffId,
+          };
+        }
+        const reader = await Reader.findById(user._id);
+        return {
+          ...user.toObject(),
+          readerId: reader.readerId,
+          gender: reader.gender,
+        };
+      })
+    );
+
     return {
       totalUsers: total,
       totalPages: Math.ceil(total / limit),
       limit,
       currentPage: Math.ceil(skip / limit) + 1,
-      users: users,
+      users: userData,
     };
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -163,6 +182,13 @@ const getCurrentUserProfile = async (userId) => {
  */
 const updateUser = async (userID, updateData) => {
   try {
+    if (updateData.role === Role.READER && updateData.gender) {
+      // Update reader
+      await Reader.findByIdAndUpdate(userID, {
+        gender: updateData.gender,
+      });
+    }
+
     // Check role field in updateData and remove it if present
     if (updateData.role) {
       delete updateData.role;

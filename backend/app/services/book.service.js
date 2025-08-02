@@ -103,7 +103,9 @@ const createBook = async (bookData, coverFile) => {
  * @param {Number} skip - Number of documents to skip for pagination
  * @param {Number} limit - Maximum number of documents to return
  * @param {String} search - Search query for book title
- * @param {String} categoryId - Category filter for books
+ * @param {String} categories - Filter by category IDs
+ * @param {String} authors - Filter by author IDs
+ * @param {String} publisher - Filter by publisher IDs
  * @return {Promise<Array>} - An array of book documents
  * @throws {ApiError} - If the retrieval fails
  */
@@ -111,14 +113,18 @@ const getAllBooks = async (
   skip = 0,
   limit = 10,
   search = "",
-  categoryId = ""
+  categories = "",
+  authors = "",
+  publisher = ""
 ) => {
   try {
     // get all active books with pagination
     const books = await Book.find({
       isActive: true,
       title: { $regex: search.trim(), $options: "i" }, // case-insensitive search
-      ...(categoryId && { categories: categoryId }), // filter by category if provided
+      ...(categories && { categories }), // filter by category if provided
+      ...(authors && { authors: { $in: authors } }), // filter by authors if provided
+      ...(publisher && { publisher: { $in: publisher } }), // filter by publishers if provided
     })
       .skip(search ? 0 : skip)
       .limit(limit);
@@ -141,7 +147,7 @@ const getAllBooks = async (
     const total = await Book.countDocuments({
       isActive: true,
       title: { $regex: search.trim(), $options: "i" },
-      ...(categoryId && { categories: categoryId }),
+      ...(categories && { categories }),
     });
 
     return {

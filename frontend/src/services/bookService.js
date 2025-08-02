@@ -39,13 +39,17 @@ export const bookService = {
    * @param {Object} bookData - Dữ liệu sách mới
    * @returns {Promise} - Promise chứa thông tin sách đã tạo
    */
-  create: async (bookData) => {
+  create: async (formData) => {
     try {
-      const response = await api.post("/books", bookData);
+      const response = await api.post("/books", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return response.data;
     } catch (error) {
       console.error("Error creating book:", error);
-      throw error;
+      throw new Error(error.response?.data?.message || "Failed to create book");
     }
   },
 
@@ -55,13 +59,17 @@ export const bookService = {
    * @param {Object} bookData - Dữ liệu cập nhật
    * @returns {Promise} - Promise chứa thông tin sách đã cập nhật
    */
-  update: async (bookId, bookData) => {
+  update: async (bookId, formData) => {
     try {
-      const response = await api.put(`/books/${bookId}`, bookData);
+      const response = await api.put(`/books/${bookId}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       return response.data;
     } catch (error) {
       console.error("Error updating book:", error);
-      throw error;
+      throw new Error(error.response?.data?.message || "Failed to update book");
     }
   },
 

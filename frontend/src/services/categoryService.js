@@ -5,30 +5,15 @@ import api from "./api.js";
  */
 export const categoryService = {
   /**
-   * Lấy danh sách tất cả thể loại sách
+   * Lấy danh sách thể loại với phân trang và lọc
    * @returns {Promise} - Promise chứa danh sách thể loại
    */
-  getAllCategories: async () => {
+  getAll: async () => {
     try {
       const response = await api.get("/categories");
       return response.data;
     } catch (error) {
       console.error("Error fetching categories:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Lấy danh sách thể loại với phân trang và lọc
-   * @param {Object} params - Các tham số tìm kiếm
-   * @returns {Promise} - Promise chứa danh sách thể loại
-   */
-  getAll: async (params = {}) => {
-    try {
-      const response = await api.get("/categories", { params });
-      return response.data;
-    } catch (error) {
-      console.error("Error fetching categories with params:", error);
       throw error;
     }
   },
@@ -44,6 +29,21 @@ export const categoryService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching category ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thông tin chi tiết thể loại theo tên
+   * @param {string} name - Tên của thể loại
+   * @returns {Promise} - Promise chứa thông tin thể loại
+   */
+  getByName: async (name) => {
+    try {
+      const response = await api.get(`/categories/name/${name}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching category ${name}:`, error);
       throw error;
     }
   },

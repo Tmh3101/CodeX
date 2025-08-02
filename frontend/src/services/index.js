@@ -5,3 +5,5 @@ export { categoryService } from "./categoryService.js";
 export { authService } from "./authService.js";
 export { userService } from "./userService.js";
 export { borrowService } from "./borrowService.js";
+export { authorService } from "./authorService.js";
+export { publisherService } from "./publisherService.js";

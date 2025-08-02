@@ -6,15 +6,14 @@ import api from "./api.js";
 export const publisherService = {
   /**
    * Lấy danh sách nhà xuất bản với phân trang và lọc
-   * @param {Object} params - Các tham số tìm kiếm
    * @returns {Promise} - Promise chứa danh sách nhà xuất bản
    */
-  getAll: async (params = {}) => {
+  getAll: async () => {
     try {
-      const response = await api.get("/publishers", { params });
+      const response = await api.get("/publishers");
       return response.data;
     } catch (error) {
-      console.error("Error fetching publishers with params:", error);
+      console.error("Error fetching publishers:", error);
       throw error;
     }
   },
@@ -30,6 +29,21 @@ export const publisherService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching publisher ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thông tin chi tiết nhà xuất bản theo tên
+   * @param {string} name - Tên của nhà xuất bản
+   * @returns {Promise} - Promise chứa thông tin nhà xuất bản
+   */
+  getByName: async (name) => {
+    try {
+      const response = await api.get(`/publishers/name/${name}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching publisher ${name}:`, error);
       throw error;
     }
   },

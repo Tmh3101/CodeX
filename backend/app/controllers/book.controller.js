@@ -59,13 +59,17 @@ const getAllBooks = async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     const search = req.query.search || "";
-    const categoryId = req.query.categoryId || "";
+    const categories = req.query.categories || "";
+    const authors = req.query.authors || "";
+    const publisher = req.query.publisher || "";
 
     const response = await bookService.getAllBooks(
       skip,
       limit,
       search,
-      categoryId
+      categories,
+      authors,
+      publisher
     );
     return res.status(200).json({
       message: "Books retrieved successfully",

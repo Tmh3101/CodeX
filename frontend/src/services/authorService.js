@@ -6,15 +6,14 @@ import api from "./api.js";
 export const authorService = {
   /**
    * Lấy danh sách tác giả với phân trang và lọc
-   * @param {Object} params - Các tham số tìm kiếm
    * @returns {Promise} - Promise chứa danh sách tác giả
    */
-  getAll: async (params = {}) => {
+  getAll: async () => {
     try {
-      const response = await api.get("/authors", { params });
+      const response = await api.get("/authors");
       return response.data;
     } catch (error) {
-      console.error("Error fetching authors with params:", error);
+      console.error("Error fetching authors:", error);
       throw error;
     }
   },
@@ -30,6 +29,21 @@ export const authorService = {
       return response.data;
     } catch (error) {
       console.error(`Error fetching author ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thông tin chi tiết tác giả theo tên
+   * @param {string} name - Tên của tác giả
+   * @returns {Promise} - Promise chứa thông tin tác giả
+   */
+  getByName: async (name) => {
+    try {
+      const response = await api.get(`/authors/name/${name}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching author ${name}:`, error);
       throw error;
     }
   },

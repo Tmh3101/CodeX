@@ -51,12 +51,13 @@ const createUser = async (req, res, next) => {
  */
 const getAllUsers = async (req, res, next) => {
   try {
+    const filter = req.query.filter || {};
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
     const skip = (page - 1) * limit;
 
-    const response = await userService.getAllUsers(skip, limit);
+    const response = await userService.getAllUsers(filter, skip, limit);
     return res.status(200).json({
       message: "Users retrieved successfully",
       data: response,
