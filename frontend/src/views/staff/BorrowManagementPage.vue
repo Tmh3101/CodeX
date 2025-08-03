@@ -281,7 +281,7 @@
             </div>
             <div>
               <span class="font-bold">Hạn trả:</span>
-              {{ formatDate(selectedBorrow.dueDate) }}
+              {{ formatDate(selectedBorrow.returnDate) }}
             </div>
             <div v-if="selectedBorrow.note">
               <span class="font-bold">Ghi chú:</span>

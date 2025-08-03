@@ -68,7 +68,10 @@ const createUser = async (userData) => {
     if (newUser.role === Role.STAFF) {
       newUser = await staffService.createStaff(newUser._id);
     } else {
-      newUser = await readerService.createReader(newUser._id);
+      newUser = await readerService.createReader(
+        newUser._id,
+        userData.gender || null
+      );
     }
 
     // Get full user info including populated fields

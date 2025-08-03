@@ -29,13 +29,14 @@ const getNextReaderId = async () => {
  * @returns {Promise<Object>} - Newly created reader member info
  * @throws {Error} - if reader creation fails
  */
-const createReader = async (userID) => {
+const createReader = async (userID, gender) => {
   try {
     const nextReaderId = await getNextReaderId();
 
     const newReader = new Reader({
       _id: userID,
       readerId: nextReaderId,
+      gender: gender,
     });
     await newReader.save();
 
@@ -54,17 +55,6 @@ const createReader = async (userID) => {
  */
 const updateReader = async (userID, updateData) => {
   try {
-    // Validate gender if provided
-    if (updateData.gender) {
-      const validGenders = Object.values(Gender);
-      if (!validGenders.includes(updateData)) {
-        throw new ApiError(
-          400,
-          `Gender must be one of: ${validGenders.join(", ")}`
-        );
-      }
-    }
-
     const updatedReader = await Reader.findByIdAndUpdate(userID, updateData, {
       new: true,
       runValidators: true,

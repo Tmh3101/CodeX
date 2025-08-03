@@ -37,6 +37,18 @@
             <span>Quản lý mượn sách</span>
           </router-link>
 
+          <!-- User Management -->
+          <router-link
+            to="/staff/users"
+            class="nav-item"
+            :class="{
+              'nav-item-active': $route.path.startsWith('/staff/users'),
+            }"
+          >
+            <i class="pi pi-users text-lg"></i>
+            <span>Quản lý người dùng</span>
+          </router-link>
+
           <!-- Book Management -->
           <router-link
             to="/staff/books"
@@ -49,16 +61,16 @@
             <span>Quản lý sách</span>
           </router-link>
 
-          <!-- User Management -->
+          <!-- Library Information -->
           <router-link
-            to="/staff/users"
+            to="/staff/library-info"
             class="nav-item"
             :class="{
-              'nav-item-active': $route.path.startsWith('/staff/users'),
+              'nav-item-active': $route.path.startsWith('/staff/library-info'),
             }"
           >
-            <i class="pi pi-users text-lg"></i>
-            <span>Quản lý người dùng</span>
+            <i class="pi pi-database text-lg"></i>
+            <span>Quản lý thông tin</span>
           </router-link>
         </div>
       </nav>
@@ -76,9 +88,9 @@
             </div>
             <div class="ml-3">
               <p class="text-sm font-medium text-text-dark">
-                {{ user?.firstName }} {{ user?.lastName }}
+                {{ user?.user.firstName }} {{ user?.user.lastName }}
               </p>
-              <p class="text-xs text-gray-500">{{ user?.email }}</p>
+              <p class="text-xs text-gray-500">{{ user?.user.email }}</p>
             </div>
           </div>
           <button
@@ -143,8 +155,9 @@ const pageTitle = computed(() => {
   const titles = {
     "/staff/dashboard": "Tổng quan",
     "/staff/borrows": "Quản lý mượn sách",
-    "/staff/books": "Quản lý sách",
     "/staff/users": "Quản lý người dùng",
+    "/staff/books": "Quản lý sách",
+    "/staff/library-info": "Quản lý thông tin",
   };
 
   return titles[route.path] || "Quản lý";
@@ -154,8 +167,9 @@ const pageDescription = computed(() => {
   const descriptions = {
     "/staff/dashboard": "Thống kê tổng quan hệ thống thư viện",
     "/staff/borrows": "Xem và xử lý các yêu cầu mượn sách",
-    "/staff/books": "Quản lý danh mục sách trong thư viện",
     "/staff/users": "Quản lý thông tin người dùng hệ thống",
+    "/staff/books": "Quản lý danh mục sách trong thư viện",
+    "/staff/library-info": "Quản lý thông tin thể loại, tác giả, nhà xuất bản",
   };
 
   return descriptions[route.path] || "Hệ thống quản lý thư viện CodeX";

@@ -20,6 +20,17 @@ export const userService = {
     }
   },
 
+  // Get current user profile
+  getCurrentProfile: async () => {
+    try {
+      const response = await api.get("/users/me/profile");
+      return response.data;
+    } catch (error) {
+      console.error("Error getting current profile:", error);
+      throw error;
+    }
+  },
+
   /**
    * [STAFF] Lấy danh sách tất cả người dùng
    * @param {Object} params - Query parameters (page, limit, search, etc.)
@@ -113,6 +124,59 @@ export const userService = {
       return response.data;
     } catch (error) {
       console.error(`Error deleting user ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật thông tin người dùng hiện tại
+   * @param {Object} profileData - Dữ liệu cập nhật thông tin người dùng
+   * @returns {Promise} - Promise chứa thông tin người dùng đã cập nhật
+   * @throws {Error} - Nếu cập nhật thông tin người dùng thất bại
+   */
+  updateProfile: async (profileData) => {
+    try {
+      const response = await api.put("/users/me/update-profile", profileData);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      throw error;
+    }
+  },
+
+  // Change password
+  changePassword: async (passwordData) => {
+    try {
+      const response = await api.put("/users/me/change-password", passwordData);
+      return response.data;
+    } catch (error) {
+      console.error("Error changing password:", error);
+      throw error;
+    }
+  },
+
+  // Upload avatar
+  uploadAvatar: async (formData) => {
+    try {
+      const response = await api.put("/users/me/upload-avatar", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      throw error;
+    }
+  },
+
+  // Delete avatar
+  deleteAvatar: async () => {
+    try {
+      const response = await api.put("/users/me/delete-avatar");
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting avatar:", error);
       throw error;
     }
   },

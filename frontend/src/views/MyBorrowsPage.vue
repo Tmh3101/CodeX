@@ -189,7 +189,7 @@ import { borrowService } from "../services/borrowService.js";
 
 const borrows = ref([]);
 const loading = ref(true);
-const activeTab = ref("active");
+const activeTab = ref("pending");
 
 const tabs = [
   { id: "pending", name: "Đang chờ duyệt" },
