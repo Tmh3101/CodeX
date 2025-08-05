@@ -44,7 +44,7 @@ export const borrowService = {
    */
   cancelBorrow: async (borrowId) => {
     try {
-      const response = await api.delete(`/borrows/cancel/${borrowId}`);
+      const response = await api.post(`/borrows/cancel/${borrowId}`);
       return response.data;
     } catch (error) {
       console.error("Error canceling borrow request:", error);

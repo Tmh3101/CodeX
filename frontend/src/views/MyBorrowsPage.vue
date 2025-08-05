@@ -267,4 +267,14 @@ const getStatusClass = (status) => {
       return "bg-gray-200 text-gray-600";
   }
 };
+
+const cancelBorrow = async (borrowId) => {
+  try {
+    await borrowService.cancelBorrow(borrowId);
+    borrows.value = borrows.value.filter((b) => b._id !== borrowId);
+    console.log("Borrow cancelled successfully");
+  } catch (error) {
+    console.error("Error cancelling borrow:", error);
+  }
+};
 </script>

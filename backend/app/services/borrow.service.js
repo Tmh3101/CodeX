@@ -77,6 +77,21 @@ const createBorrow = async (userId, borrowData) => {
       throw new ApiError(400, "Not enough available books for this borrow");
     }
 
+    // Check current borrow of user (current borrows + new borrow <= 5)
+    const currentBorrows = await Borrow.find({
+      readerId: reader.readerId,
+      status: { $in: [BorrowStatus.PENDING, BorrowStatus.APPROVED] },
+    });
+
+    const countCurrentBorrows = currentBorrows.reduce(
+      (count, borrow) => count + borrow.quantity,
+      0
+    );
+
+    if (countCurrentBorrows + borrowData.quantity > 5) {
+      throw new ApiError(400, "Bạn không thể mượn quá 5 cuốn sách cùng lúc");
+    }
+
     // Create a new borrow instance
     const newBorrow = new Borrow({
       readerId: reader.readerId,
@@ -90,8 +105,8 @@ const createBorrow = async (userId, borrowData) => {
 
     return borrowInfo;
   } catch (error) {
-    console.error("Error creating borrow:", error);
-    throw new Error("Failed to create borrow: " + error.message);
+    console.error("Error creating borrow:", error.message);
+    throw new ApiError(400, error.message);
   }
 };
 
@@ -135,7 +150,7 @@ const cancelBorrow = async (userId, borrowId) => {
     };
   } catch (error) {
     console.error("Error cancelling borrow:", error);
-    throw new Error("Failed to cancel borrow: " + error.message);
+    throw new ApiError(400, "Failed to cancel borrow: " + error.message);
   }
 };
 

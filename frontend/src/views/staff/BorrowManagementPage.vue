@@ -22,6 +22,8 @@
               <option value="pending">Chờ duyệt</option>
               <option value="approved">Đang mượn</option>
               <option value="returned">Đã trả</option>
+              <option value="rejected">Đã từ chối</option>
+              <option value="cancelled">Đã hủy</option>
               <option value="overdue">Quá hạn</option>
             </select>
           </div>
@@ -402,20 +404,6 @@
                         {{ formatDate(selectedBorrow.dueDate) }}
                       </div>
                     </div>
-
-                    <!-- <div
-                      v-if="selectedBorrow.actualReturnDate"
-                      class="bg-white p-3 rounded-lg"
-                    >
-                      <div
-                        class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"
-                      >
-                        Ngày trả thực tế
-                      </div>
-                      <div class="text-lg font-semibold text-gray-900">
-                        {{ formatDate(selectedBorrow.actualReturnDate) }}
-                      </div>
-                    </div> -->
                   </div>
 
                   <!-- Days calculation -->
@@ -612,7 +600,6 @@ import { ref, reactive, onMounted } from "vue";
 import { debounce } from "lodash";
 import StaffLayout from "@/layouts/StaffLayout.vue";
 import { borrowService } from "@/services/borrowService";
-import { get } from "lodash";
 
 const loading = ref(false);
 const borrows = ref([]);
@@ -734,22 +721,10 @@ const getStatusText = (status) => {
     approved: "Đang mượn",
     rejected: "Đã từ chối",
     returned: "Đã trả",
+    cancelled: "Đã hủy",
     overdue: "Quá hạn",
   };
   return statusMap[status] || status;
-};
-
-// Helper methods for the enhanced modal
-const getReaderInitials = (reader) => {
-  const firstName = reader.user?.firstName || "";
-  const lastName = reader.user?.lastName || "";
-  return `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
-};
-
-const getStaffInitials = (staff) => {
-  const firstName = staff?.firstName || "";
-  const lastName = staff?.lastName || "";
-  return `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
 };
 
 const formatAuthors = (authors) => {
@@ -830,6 +805,7 @@ const getStatusDotClass = (status) => {
     approved: "bg-green-400",
     rejected: "bg-red-400",
     borrowed: "bg-green-400",
+    returned: "bg-gray-400",
     overdue: "bg-red-400",
   };
   return classMap[status] || "bg-gray-400";
@@ -842,6 +818,7 @@ const getStatusClass = (status) => {
     approved: "bg-green-50 text-green-800 border-green-200",
     rejected: "bg-red-50 text-red-800 border-red-200",
     returned: "bg-gray-50 text-gray-800 border-gray-200",
+    borrowed: "bg-green-50 text-green-800 border-green-200",
     overdue: "bg-red-50 text-red-800 border-red-200",
   };
   return classMap[status] || "bg-gray-50 text-gray-800 border-gray-200";

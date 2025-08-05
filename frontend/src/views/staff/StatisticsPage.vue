@@ -307,7 +307,7 @@
               <h3 class="text-lg font-semibold text-gray-900 mb-4">
                 Thống kê theo thể loại
               </h3>
-              <div class="h-96">
+              <div class="h-[580px]">
                 <Bar
                   ref="categoryStatsChart"
                   :data="categoryStatsData"
