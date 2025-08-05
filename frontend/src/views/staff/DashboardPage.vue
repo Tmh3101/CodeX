@@ -13,7 +13,7 @@
       </div>
 
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <!-- Total Books -->
         <div class="bg-white rounded-lg shadow-sm p-6">
           <div class="flex items-center">
@@ -27,26 +27,11 @@
           </div>
         </div>
 
-        <!-- Active Borrows -->
+        <!-- Pending Requests -->
         <div class="bg-white rounded-lg shadow-sm p-6">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-yellow-100">
               <i class="pi pi-clock text-yellow-600 text-xl"></i>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Đang mượn</p>
-              <p class="text-2xl font-bold text-gray-900">
-                {{ approvedBorrowsCount }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Pending Requests -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
-          <div class="flex items-center">
-            <div class="p-3 rounded-full bg-orange-100">
-              <i class="pi pi-exclamation-triangle text-orange-600 text-xl"></i>
             </div>
             <div class="ml-4">
               <p class="text-sm font-medium text-gray-600">Chờ duyệt</p>
@@ -57,15 +42,30 @@
           </div>
         </div>
 
-        <!-- Total Users -->
+        <!-- Active Borrows -->
         <div class="bg-white rounded-lg shadow-sm p-6">
           <div class="flex items-center">
             <div class="p-3 rounded-full bg-green-100">
-              <i class="pi pi-users text-green-600 text-xl"></i>
+              <i class="pi pi-check text-green-600 text-xl"></i>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-600">Người dùng</p>
-              <p class="text-2xl font-bold text-gray-900">{{ usersCount }}</p>
+              <p class="text-sm font-medium text-gray-600">Đang mượn</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {{ approvedBorrowsCount }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Overdue -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-red-100">
+              <i class="pi pi-exclamation-triangle text-orange-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Quá hạn</p>
+              <p class="text-2xl font-bold text-gray-900">{{ overdueCount }}</p>
             </div>
           </div>
         </div>
@@ -125,19 +125,18 @@ const staff = computed(() => authStore.user);
 const booksCount = ref(0);
 const approvedBorrowsCount = ref(0);
 const pendingBorrowsCount = ref(0);
-const usersCount = ref(0);
+const overdueCount = ref(0);
 
 const fetchStats = async () => {
   try {
-    const [books, borrows, users] = await Promise.all([
+    const [books, borrows] = await Promise.all([
       bookService.getAll(),
       borrowService.getAll(),
-      userService.getAll(),
     ]);
     booksCount.value = books.data.totalBooks;
     approvedBorrowsCount.value = borrows.data.approvedQuantity;
     pendingBorrowsCount.value = borrows.data.pendingQuantity;
-    usersCount.value = users.data.totalUsers;
+    overdueCount.value = borrows.data.overdueQuantity;
   } catch (error) {
     console.error("Error fetching stats:", error);
   }

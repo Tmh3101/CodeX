@@ -72,6 +72,18 @@
             <i class="pi pi-database text-lg"></i>
             <span>Quản lý thông tin</span>
           </router-link>
+
+          <!-- Statistics -->
+          <router-link
+            to="/staff/statistics"
+            class="nav-item"
+            :class="{
+              'nav-item-active': $route.path.startsWith('/staff/statistics'),
+            }"
+          >
+            <i class="pi pi-chart-bar text-lg"></i>
+            <span>Thống kê</span>
+          </router-link>
         </div>
       </nav>
 
@@ -115,20 +127,6 @@
             </h2>
             <p class="text-sm text-gray-600 mt-1">{{ pageDescription }}</p>
           </div>
-          <div class="flex items-center space-x-4">
-            <!-- Notifications -->
-            <button class="text-gray-400 hover:text-gray-600 relative">
-              <i class="pi pi-bell text-lg"></i>
-              <span
-                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center"
-                >3</span
-              >
-            </button>
-            <!-- Settings -->
-            <button class="text-gray-400 hover:text-gray-600">
-              <i class="pi pi-cog text-lg"></i>
-            </button>
-          </div>
         </div>
       </header>
 
@@ -158,6 +156,7 @@ const pageTitle = computed(() => {
     "/staff/users": "Quản lý người dùng",
     "/staff/books": "Quản lý sách",
     "/staff/library-info": "Quản lý thông tin",
+    "/staff/statistics": "Thống kê",
   };
 
   return titles[route.path] || "Quản lý";
@@ -170,6 +169,7 @@ const pageDescription = computed(() => {
     "/staff/users": "Quản lý thông tin người dùng hệ thống",
     "/staff/books": "Quản lý danh mục sách trong thư viện",
     "/staff/library-info": "Quản lý thông tin thể loại, tác giả, nhà xuất bản",
+    "/staff/statistics": "Thống kê và báo cáo hệ thống thư viện",
   };
 
   return descriptions[route.path] || "Hệ thống quản lý thư viện CodeX";

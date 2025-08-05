@@ -3,13 +3,11 @@
  * This service handles borrow operations such as creating, updating, and retrieving borrow records.
  */
 
-const User = require("../models/user.model");
 const Borrow = require("../models/borrow.model");
 const Book = require("../models/book.model");
 const Reader = require("../models/reader.model");
 const Staff = require("../models/staff.model");
 const ApiError = require("../api-error");
-const Role = require("../enums/role.enum");
 const BorrowStatus = require("../enums/borrowStatus.enum");
 
 // Function to get number of avilable books for a borrow
@@ -38,6 +36,13 @@ const getAvailableBookQuantity = async (bookId) => {
   const availableQuantity = book.quantity - totalBorrowed;
 
   return Math.max(0, availableQuantity);
+};
+
+// Function to check due date of a borrow
+const isBorrowOverdue = (borrow) => {
+  if (borrow.status !== BorrowStatus.APPROVED) return false; // Only check overdue for approved borrows
+  const now = new Date();
+  return borrow.dueDate < now;
 };
 
 /**
@@ -76,11 +81,8 @@ const createBorrow = async (userId, borrowData) => {
     const newBorrow = new Borrow({
       readerId: reader.readerId,
       bookId: borrowData.bookId,
-      staffId: null,
       quantity: borrowData.quantity,
-      status: BorrowStatus.PENDING, // Default status is PENDING
-      returnDate: null,
-      note: borrowData.note || "",
+      note: borrowData.note,
     });
     // Save the borrow to the database
     const savedBorrow = await newBorrow.save();
@@ -164,12 +166,14 @@ const approveBorrow = async (userId, borrowId) => {
 
     // Update the borrow status to APPROVED
     borrow.status = BorrowStatus.APPROVED;
-    borrow.returnDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // Set return date to 14 days after approval
+    borrow.borrowDate = new Date(); // Set borrow date to now
+    borrow.dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // Set due date to 14 days after approval
     borrow.approvedStaffId = staff.staffId; // Set the staff who approved the borrow
 
     const updatedBorrow = await borrow.save();
+    const borrowInfo = await updatedBorrow.getInfo();
 
-    return updatedBorrow.getInfo();
+    return borrowInfo;
   } catch (error) {
     console.error("Error approving borrow:", error);
     throw new Error("Failed to approve borrow: " + error.message);
@@ -204,11 +208,12 @@ const rejectBorrow = async (userId, borrowId) => {
 
     // Update the borrow status to REJECTED
     borrow.status = BorrowStatus.REJECTED;
-    borrow.returnedStaffId = staff.staffId; // Set the staff who processed the rejection
+    borrow.approvedStaffId = staff.staffId; // Set the staff who processed the rejection
 
     const updatedBorrow = await borrow.save();
+    const borrowInfo = await updatedBorrow.getInfo();
 
-    return updatedBorrow.getInfo();
+    return borrowInfo;
   } catch (error) {
     console.error("Error rejecting borrow:", error);
     throw new Error("Failed to reject borrow: " + error.message);
@@ -243,10 +248,15 @@ const confirmBorrowReturn = async (userId, borrowId) => {
     // Update the borrow status to RETURNED
     borrow.status = BorrowStatus.RETURNED;
     borrow.returnedStaffId = staff.staffId; // Set the staff who processed the return
+    borrow.returnDate = new Date(); // Set the return date to now
 
     const updatedBorrow = await borrow.save();
+    const borrowInfo = await updatedBorrow.getInfo();
 
-    return updatedBorrow.getInfo();
+    return {
+      ...borrowInfo,
+      isOverdue: isBorrowOverdue(updatedBorrow),
+    };
   } catch (error) {
     console.error("Error confirming borrow returned:", error);
     throw new Error("Failed to confirm borrow returned: " + error.message);
@@ -268,18 +278,26 @@ const getAllBorrows = async (filters, skip, limit) => {
         delete filters[key];
       }
     });
-    // Find borrows with pagination and filter
-    const borrows = await Borrow.find(
-      filters.status ? { status: filters.status } : {}
-    )
+
+    if (filters.status === "overdue") {
+      filters.status = BorrowStatus.APPROVED; // Only check overdue for approved borrows
+      filters.dueDate = { $lt: new Date() }; // Filter for overdue borrows
+    }
+
+    // Find borrows with pagination and filter, sorting by createdAt descending
+    const borrows = await Borrow.find(filters)
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .sort({ createdAt: -1 });
 
     let borrowInfo = await Promise.all(
       borrows.map(async (borrow) => {
         const borrowDetails = await borrow.getInfo();
         borrowDetails.reader = await borrowDetails.reader.getUserInfo();
-        return borrowDetails;
+        return {
+          ...borrowDetails,
+          isOverdue: isBorrowOverdue(borrow), // Check if the borrow is overdue
+        };
       })
     );
 
@@ -304,10 +322,10 @@ const getAllBorrows = async (filters, skip, limit) => {
       const toDate = filters.toDate ? new Date(filters.toDate) : new Date();
 
       borrowInfo = borrowInfo.filter((borrow) => {
-        const borrowDate = new Date(borrow.borrowDate);
+        const createdAt = new Date(borrow.createdAt);
         const returnDate = new Date(borrow.returnDate);
         return (
-          (borrowDate >= fromDate && borrowDate <= toDate) ||
+          (createdAt >= fromDate && createdAt <= toDate) ||
           (returnDate >= fromDate && returnDate <= toDate)
         );
       });
@@ -330,6 +348,7 @@ const getAllBorrows = async (filters, skip, limit) => {
       borrows: borrowInfo,
       pendingQuantity: totalPending,
       approvedQuantity: totalApproved,
+      overdueQuantity: borrowInfo.filter(isBorrowOverdue).length,
     };
   } catch (error) {
     console.error("Error getting all borrows:", error);
@@ -341,7 +360,6 @@ const getAllBorrows = async (filters, skip, limit) => {
  * Get my borrows
  * @param {String} userId - The ID of the user to get borrows for
  * @param {Object} filter - The filter criteria for retrieving borrows
- *
  * @return {Promise<Array>} - An array of borrow documents
  * @throws {Error} - If the borrow retrieval fails
  */
@@ -359,7 +377,10 @@ const getMyBorrows = async (userId, filter = {}) => {
     const borrowInfo = await Promise.all(
       borrows.map(async (borrow) => {
         const borrowDetails = await borrow.getInfo();
-        return borrowDetails;
+        return {
+          ...borrowDetails,
+          isOverdue: isBorrowOverdue(borrow),
+        };
       })
     );
 
@@ -386,7 +407,10 @@ const getBorrowById = async (borrowId) => {
 
     const borrowInfo = await borrow.getInfo();
     borrowInfo.reader = await borrowInfo.reader.getUserInfo();
-    return borrowInfo;
+    return {
+      ...borrowInfo,
+      isOverdue: isBorrowOverdue(borrow), // Check if the borrow is overdue
+    };
   } catch (error) {
     console.error("Error getting borrow by ID:", error);
     throw new Error("Failed to retrieve borrow: " + error.message);

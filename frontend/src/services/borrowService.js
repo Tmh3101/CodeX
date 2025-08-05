@@ -101,17 +101,17 @@ export const borrowService = {
   },
 
   /**
-   * [STAFF] Đánh dấu đã trả sách
+   * [STAFF] Xác nhận đã trả sách (/confirm-return)
    * @param {string} borrowId - ID của yêu cầu mượn sách
-   * @return {Promise} - Promise chứa thông tin đã trả sách
-   * @throws {Error} - Nếu đánh dấu trả sách thất bại
+   * @return {Promise} - Promise chứa thông tin đã xác nhận trả sách
+   * @throws {Error} - Nếu xác nhận trả sách thất bại
    */
-  markAsReturned: async (borrowId) => {
+  confirmReturn: async (borrowId) => {
     try {
-      const response = await api.post(`/borrows/return/${borrowId}`);
+      const response = await api.post(`/borrows/confirm-return/${borrowId}`);
       return response.data;
     } catch (error) {
-      console.error("Error marking borrow as returned:", error);
+      console.error("Error confirming return of borrow:", error);
       throw error;
     }
   },

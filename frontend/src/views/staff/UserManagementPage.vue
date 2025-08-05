@@ -150,12 +150,21 @@
               >
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
-                    <div
-                      class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center"
-                    >
-                      <span class="text-sm font-medium text-white">
-                        {{ getUserInitials(user) }}
-                      </span>
+                    <div>
+                      <img
+                        v-if="user.avatarUrl"
+                        :src="user.avatarUrl"
+                        alt="User Avatar"
+                        class="h-10 w-10 rounded-full object-cover"
+                      />
+                      <div
+                        v-else
+                        class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center"
+                      >
+                        <span class="text-sm font-medium text-gray-500">
+                          {{ getUserInitials(user) }}
+                        </span>
+                      </div>
                     </div>
                     <div class="ml-4">
                       <div class="text-sm font-medium text-gray-900">
@@ -469,7 +478,15 @@
         <div v-if="selectedUser" class="px-6 py-6">
           <!-- User Avatar and Basic Info -->
           <div class="text-center mb-6">
+            <div v-if="selectedUser.avatarUrl" class="mb-4">
+              <img
+                :src="selectedUser.avatarUrl"
+                alt="User Avatar"
+                class="mx-auto h-20 w-20 rounded-full object-cover"
+              />
+            </div>
             <div
+              v-else
               class="mx-auto h-20 w-20 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center mb-4"
             >
               <span class="text-2xl font-bold text-white">

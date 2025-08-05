@@ -32,9 +32,10 @@ const borrowSchema = new mongoose.Schema(
       enum: Object.values(BorrowStatus), // use enum for borrow status
       default: BorrowStatus.PENDING,
     },
-    borrowDate: { type: Date, default: Date.now }, // date when the book was borrowed
+    borrowDate: { type: Date, default: null }, // date when the book was borrowed
+    dueDate: { type: Date, default: null }, // date when the book is due
     returnDate: { type: Date, default: null }, // date when the book is expected to be returned
-    note: { type: String, default: "" }, // additional notes (optional)
+    note: { type: String, default: null }, // additional notes (optional)
   },
   {
     timestamps: true, // automatically create createdAt and updatedAt fields
@@ -48,20 +49,27 @@ borrowSchema.methods.getInfo = async function () {
   const book = await Book.findOne({ bookId: this.bookId });
   const bookInfo = await book.getFullInfo();
 
-  const approveStaff = this.approveStaffId
-    ? await Staff.findOne({ staffId: this.staffId })
+  let approvedStaff = this.approvedStaffId
+    ? await Staff.findOne({ staffId: this.approvedStaffId })
     : null;
 
-  const returnStaff = this.returnedStaffId
+  if (approvedStaff) {
+    approvedStaff = await approvedStaff.getUserInfo();
+  }
+
+  let returnedStaff = this.returnedStaffId
     ? await Staff.findOne({ staffId: this.returnedStaffId })
     : null;
 
+  if (returnedStaff) {
+    returnedStaff = await returnedStaff.getUserInfo();
+  }
+
   const data = this.toObject();
 
-  data.reader = reader;
-  data.book = bookInfo;
-  data.approvedStaff = approveStaff;
-  data.returnedStaff = returnStaff;
+  (data.reader = reader), (data.book = bookInfo);
+  data.approvedStaff = approvedStaff;
+  data.returnedStaff = returnedStaff;
   delete data.readerId;
   delete data.bookId;
   delete data.approvedStaffId;

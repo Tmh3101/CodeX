@@ -14,6 +14,7 @@ const categoryRouter = require("./app/routes/category.route");
 const publisherRouter = require("./app/routes/publisher.route");
 const bookRouter = require("./app/routes/book.route");
 const borrowRouter = require("./app/routes/borrow.route");
+const statisticsRouter = require("./app/routes/statistics.route");
 
 app.use(cors());
 app.use(express.json());
@@ -43,6 +44,9 @@ app.use("/api/books", bookRouter);
 
 // Borrow routes
 app.use("/api/borrows", borrowRouter);
+
+// Statistics routes
+app.use("/api/statistics", statisticsRouter);
 
 // Handle 404 Not Found
 app.use(notFoundHandler);

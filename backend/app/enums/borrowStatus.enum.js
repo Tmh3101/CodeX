@@ -8,5 +8,6 @@ module.exports = {
   APPROVED: "approved", // Borrow request is approved
   REJECTED: "rejected", // Borrow request is rejected by staff
   RETURNED: "returned", // Book has been returned
+  OVERDUE: "overdue", // Book is overdue for return
   CANCELLED: "cancelled", // Borrow request has been cancelled by reader
 };

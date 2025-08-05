@@ -96,7 +96,7 @@
                   Trạng thái
                 </th>
                 <th
-                  v-if="activeTab !== 'returned'"
+                  v-if="activeTab === 'pending'"
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
                   Hành động
@@ -140,35 +140,26 @@
                   {{ borrow.quantity }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500">
-                  {{ formatDate(borrow.borrowDate) }}
+                  {{ borrow.borrowDate ? formatDate(borrow.borrowDate) : "-" }}
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500">
-                  {{ formatDate(borrow.returnDate) }}
+                  {{ borrow.dueDate ? formatDate(borrow.dueDate) : "-" }}
                 </td>
                 <td class="px-6 py-4 text-sm">
                   <span
                     class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                    :class="getStatusClass(borrow.status)"
+                    :class="getStatusClass(getBorrowStatus(borrow))"
                   >
-                    {{ tabs.find((t) => t.id === borrow.status).name }}
+                    {{ getStatusName(getBorrowStatus(borrow)) }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-sm">
+                <td v-if="activeTab === 'pending'" class="px-6 py-4 text-sm">
                   <button
-                    v-if="borrow.status === 'borrowed'"
-                    class="text-primary hover:text-primary-hover font-medium"
-                    @click="returnBook(borrow._id)"
-                  >
-                    Trả sách
-                  </button>
-                  <button
-                    v-else-if="borrow.status === 'pending'"
                     class="text-white bg-primary hover:bg-red-700 font-medium px-3 py-1 rounded"
                     @click="cancelBorrow(borrow._id)"
                   >
                     Hủy
                   </button>
-                  <span v-else class="text-gray-400">-</span>
                 </td>
               </tr>
             </tbody>
@@ -245,6 +236,23 @@ const formatDate = (date) => {
   });
 };
 
+const getStatusName = (status) => {
+  const statusMap = {
+    pending: "Đang chờ duyệt",
+    approved: "Đang mượn",
+    returned: "Đã trả",
+    overdue: "Quá hạn",
+  };
+  return statusMap[status] || "Không xác định";
+};
+
+const getBorrowStatus = (borrow) => {
+  if (borrow.isOverdue) {
+    return "overdue";
+  }
+  return borrow.status;
+};
+
 const getStatusClass = (status) => {
   switch (status) {
     case "pending":
@@ -253,26 +261,10 @@ const getStatusClass = (status) => {
       return "bg-green-100 text-green-800";
     case "returned":
       return "bg-gray-100 text-gray-800";
+    case "overdue":
+      return "bg-red-100 text-red-800";
     default:
       return "bg-gray-200 text-gray-600";
-  }
-};
-
-const returnBook = async (borrowId) => {
-  try {
-    // In a real app, call API to return book
-    // await axios.put(`/api/borrows/${borrowId}/return`);
-
-    // For demo purposes, just update local state
-    const borrowIndex = borrows.value.findIndex((b) => b.borrowId === borrowId);
-    if (borrowIndex !== -1) {
-      borrows.value[borrowIndex].status = "returned";
-    }
-
-    alert("Book returned successfully!");
-  } catch (error) {
-    console.error("Error returning book:", error);
-    alert("Failed to return book. Please try again.");
   }
 };
 </script>

@@ -13,6 +13,7 @@ import BorrowManagementPage from "../views/staff/BorrowManagementPage.vue";
 import BookManagementPage from "../views/staff/BookManagementPage.vue";
 import UserManagementPage from "../views/staff/UserManagementPage.vue";
 import LibraryInfoManagementPage from "../views/staff/LibraryInfoManagementPage.vue";
+import StatisticsPage from "../views/staff/StatisticsPage.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -81,6 +82,12 @@ const router = createRouter({
       path: "/staff/library-info",
       name: "staff-library-info",
       component: LibraryInfoManagementPage,
+      meta: { requiresAuth: true, requiresStaff: true },
+    },
+    {
+      path: "/staff/statistics",
+      name: "staff-statistics",
+      component: StatisticsPage,
       meta: { requiresAuth: true, requiresStaff: true },
     },
   ],

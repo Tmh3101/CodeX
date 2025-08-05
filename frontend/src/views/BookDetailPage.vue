@@ -131,7 +131,7 @@
                 >
                   <div class="flex items-center justify-center mb-2">
                     <i class="pi pi-bookmark text-red-600 text-xl mr-2"></i>
-                    <span class="font-semibold text-red-800">Đã mượn</span>
+                    <span class="font-semibold text-red-800">Đang mượn</span>
                   </div>
                   <div class="text-2xl font-bold text-red-600">
                     {{ book.approvedQuantity || 0 }}
