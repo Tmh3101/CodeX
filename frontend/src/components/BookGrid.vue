@@ -130,7 +130,7 @@ const props = defineProps({
     type: Object,
     default: () => ({
       search: "",
-      categoryId: "",
+      categories: "",
       page: 1,
       limit: 12,
     }),
@@ -183,7 +183,7 @@ const fetchBooks = async () => {
   try {
     const params = {
       search: props.searchParams.search,
-      categoryId: props.searchParams.categoryId,
+      categories: props.searchParams.categoryId,
       page: currentPage.value,
       limit: props.searchParams.limit,
     };

@@ -66,7 +66,8 @@ const categories = ref([]);
 onMounted(async () => {
   try {
     // Fetch all categories
-    const categoriesResponse = await categoryService.getAllCategories();
+    const categoriesResponse = await categoryService.getAll();
+    console.log(categoriesResponse);
     categories.value = categoriesResponse.data;
   } catch (error) {
     console.error("Error fetching filter data:", error);

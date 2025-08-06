@@ -405,30 +405,6 @@
                       </div>
                     </div>
                   </div>
-
-                  <!-- Days calculation -->
-                  <div
-                    v-if="
-                      getBorrowStatus(selectedBorrow) === 'approved' ||
-                      getBorrowStatus(selectedBorrow) === 'overdue'
-                    "
-                    class="bg-white p-3 rounded-lg"
-                  >
-                    <div
-                      class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1"
-                    >
-                      Thời gian
-                    </div>
-                    <div class="flex items-center">
-                      <div
-                        class="text-lg font-semibold"
-                        :class="getDaysRemainingClass()"
-                      >
-                        {{ getDaysRemaining() }} ngày
-                      </div>
-                      <i :class="getDaysRemainingIcon()" class="ml-2"></i>
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -746,23 +722,6 @@ const formatCategories = (categories) => {
 const formatDateTime = (dateString) => {
   if (!dateString) return "-";
   return new Date(dateString).toLocaleString("vi-VN");
-};
-
-const getDaysRemaining = () => {
-  if (!selectedBorrow.value?.returnDate) return "";
-
-  const returnDate = new Date(selectedBorrow.value.returnDate);
-  const today = new Date();
-  const diffTime = returnDate - today;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays > 0) {
-    return `Còn ${diffDays} ngày`;
-  } else if (diffDays === 0) {
-    return "Hết hạn hôm nay";
-  } else {
-    return `Quá hạn ${Math.abs(diffDays)} ngày`;
-  }
 };
 
 const getDaysRemainingClass = () => {
